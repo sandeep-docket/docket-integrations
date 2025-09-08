@@ -23,7 +23,7 @@ export function IntegrationsPage() {
 
   const tabs = ['People', 'Knowledge Graph', 'Integrations', 'Single Sign-On', 'GuardNote']
   const categories: Array<'All' | IntegrationCategory> = [
-    'All', 'CRM', 'Communication', 'Storage & Wiki', 'Enablement', 'Calls & Intelligence', 'Support', 'Automation'
+    'All', 'CRM', 'Communication', 'Storage & Wiki', 'Enablement'
   ]
 
   // Recommended integrations for new users
@@ -154,34 +154,19 @@ export function IntegrationsPage() {
                 />
               </div>
               <div className="flex gap-2 overflow-x-auto pb-1">
-                {categories.map((category) => {
-                  const categoryIcons: Record<string, string> = {
-                    'All': '🏠',
-                    'CRM': '👥',
-                    'Communication': '💬',
-                    'Storage & Wiki': '📁',
-                    'Enablement': '🎯',
-                    'Calls & Intelligence': '📞',
-                    'Support': '🎧',
-                    'Automation': '⚡',
-                    'Other': '🔧'
-                  }
-                  
-                  return (
-                    <button
-                      key={category}
-                      onClick={() => setSelectedCategory(category)}
-                      className={`whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-medium transition-all flex-shrink-0 flex items-center gap-2 ${
-                        selectedCategory === category
-                          ? 'bg-gray-900 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
-                      }`}
-                    >
-                      <span className="text-sm">{categoryIcons[category] || '📦'}</span>
-                      <span>{category}</span>
-                    </button>
-                  )
-                })}
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`whitespace-nowrap rounded-lg px-3 py-2 text-xs font-medium transition-all flex-shrink-0 ${
+                      selectedCategory === category
+                        ? 'bg-gray-900 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
               </div>
             </div>
           </div>

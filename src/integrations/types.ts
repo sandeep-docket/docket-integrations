@@ -3,10 +3,6 @@ export type IntegrationCategory =
   | 'Communication'
   | 'Storage & Wiki'
   | 'Enablement'
-  | 'Calls & Intelligence'
-  | 'Support'
-  | 'Automation'
-  | 'Other'
 
 export type IntegrationProvider = {
   id: string
