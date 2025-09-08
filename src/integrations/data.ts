@@ -1,0 +1,31 @@
+import type { IntegrationProvider } from './types'
+
+export const PROVIDERS: IntegrationProvider[] = [
+  { id: 'salesforce', name: 'Salesforce', description: 'CRM for sales pipeline and accounts', category: 'CRM', website: 'https://salesforce.com', oauth: true, scopes: ['read', 'write'] },
+  { id: 'hubspot', name: 'HubSpot', description: 'Marketing & CRM platform', category: 'CRM', website: 'https://hubspot.com', oauth: true, scopes: ['crm.objects.read'] },
+  { id: 'slack', name: 'Slack', description: 'Collaboration and messaging', category: 'Communication', website: 'https://slack.com', oauth: true, scopes: ['channels:read', 'chat:write'] },
+  { id: 'msteams', name: 'Microsoft Teams', description: 'Communication & meetings', category: 'Communication', website: 'https://microsoft.com', oauth: true },
+  { id: 'google-drive', name: 'Google Drive', description: 'File storage and sharing', category: 'Storage & Wiki', website: 'https://drive.google.com', oauth: true },
+  { id: 'sharepoint', name: 'SharePoint', description: 'Microsoft 365 file storage', category: 'Storage & Wiki', website: 'https://microsoft.com', oauth: true },
+  { id: 'confluence', name: 'Confluence', description: 'Wiki and documentation', category: 'Storage & Wiki', website: 'https://atlassian.com', oauth: true },
+  { id: 'notion', name: 'Notion', description: 'Docs and wiki', category: 'Storage & Wiki', website: 'https://notion.so', oauth: true },
+  { id: 'highspot', name: 'Highspot', description: 'Sales enablement platform', category: 'Enablement', website: 'https://highspot.com', oauth: true },
+  { id: 'seismic', name: 'Seismic', description: 'Enablement and content', category: 'Enablement', website: 'https://seismic.com', oauth: true },
+  { id: 'gong', name: 'Gong', description: 'Revenue intelligence from calls', category: 'Calls & Intelligence', website: 'https://gong.io', oauth: true },
+  { id: 'avoma', name: 'Avoma', description: 'Meeting insights and notes', category: 'Calls & Intelligence', website: 'https://avoma.com', oauth: true },
+  { id: 'zendesk', name: 'Zendesk', description: 'Customer support platform', category: 'Support', website: 'https://zendesk.com', oauth: true },
+  { id: 'intercom', name: 'Intercom', description: 'Customer communications', category: 'Support', website: 'https://intercom.com', oauth: true },
+  { id: 'zapier', name: 'Zapier', description: 'Automation integrations', category: 'Automation', website: 'https://zapier.com', oauth: false },
+  { id: 'google-sheets', name: 'Google Sheets', description: 'Spreadsheet data and structured information', category: 'Storage & Wiki', website: 'https://sheets.google.com', oauth: true },
+  { id: 'chorus', name: 'Chorus', description: 'Revenue intelligence and call analysis', category: 'Calls & Intelligence', website: 'https://chorus.ai', oauth: true },
+  { id: 'clari', name: 'Clari', description: 'Revenue operations and forecasting', category: 'Calls & Intelligence', website: 'https://clari.com', oauth: true },
+  { id: 'mindtickle', name: 'Mindtickle', description: 'Sales enablement and training platform', category: 'Enablement', website: 'https://mindtickle.com', oauth: false },
+  { id: 'mindtickle-call-ai', name: 'Mindtickle Call AI', description: 'Call coaching and conversation intelligence', category: 'Calls & Intelligence', website: 'https://mindtickle.com', oauth: false },
+  { id: 'salesloft', name: 'Salesloft', description: 'Sales engagement and conversation intelligence', category: 'Calls & Intelligence', website: 'https://salesloft.com', oauth: false },
+  { id: 'salesforce-knowledge', name: 'Salesforce Knowledge', description: 'Salesforce Knowledge Base articles', category: 'Storage & Wiki', website: 'https://salesforce.com', oauth: true },
+  { id: 'document360', name: 'Document360', description: 'Knowledge base and documentation platform', category: 'Storage & Wiki', website: 'https://document360.com', oauth: false },
+  { id: 'crayon', name: 'Crayon', description: 'Competitive intelligence platform', category: 'Other', website: 'https://crayon.co', oauth: false },
+  { id: 'jira', name: 'Jira', description: 'Project management and issue tracking', category: 'Other', website: 'https://atlassian.com', oauth: true },
+  { id: 'google-calendar', name: 'Google Calendar', description: 'Calendar events and meeting scheduling', category: 'Other', website: 'https://calendar.google.com', oauth: true },
+]
+
