@@ -6,10 +6,9 @@ import { SubjectMatterExperts } from './SubjectMatterExperts'
 import type { SubjectMatterExpert } from './SubjectMatterExperts'
 
 
-
-export function ChorusConfigPanel({ onClose }: { onClose: () => void }) {
+export function ClariConfigPanel({ onClose }: { onClose: () => void }) {
   const { connections } = useIntegrationsStore()
-  const isAlreadyConnected = Boolean(connections['chorus'])
+  const isAlreadyConnected = Boolean(connections['clari'])
   
   const [isConnected, setIsConnected] = useState(isAlreadyConnected)
   const [isConnecting, setIsConnecting] = useState(false)
@@ -25,10 +24,10 @@ export function ChorusConfigPanel({ onClose }: { onClose: () => void }) {
   const [learningRules, setLearningRules] = useState<IngestionRule[]>([
     {
       id: '1',
-      name: 'High-value prospect calls',
+      name: 'Enterprise prospect calls',
       callType: 'external',
       selectedUsers: ['e1', 'e2', 'e3'],
-      meetingTitleKeywords: ['demo', 'discovery', 'proposal'],
+      meetingTitleKeywords: ['enterprise', 'executive', 'strategic'],
       dealStages: ['Discovery', 'Proposal', 'Negotiation'],
       isActive: true
     }
@@ -43,7 +42,6 @@ export function ChorusConfigPanel({ onClose }: { onClose: () => void }) {
     department: expert.department
   }))
 
-
   const handleConnect = async () => {
     setIsConnecting(true)
     await new Promise(resolve => setTimeout(resolve, 2000))
@@ -57,10 +55,9 @@ export function ChorusConfigPanel({ onClose }: { onClose: () => void }) {
     ))
   }
 
-
   const save = () => {
     const { configure } = useIntegrationsStore.getState()
-    configure('chorus', { 
+    configure('clari', { 
       selectedExperts: experts.filter(e => e.isSelected),
       learningRules: learningRules.filter(r => r.isActive),
       lastUpdated: new Date().toISOString()
@@ -77,8 +74,8 @@ export function ChorusConfigPanel({ onClose }: { onClose: () => void }) {
               <span className="text-sm font-bold text-white">C</span>
             </div>
             <div className="flex-1">
-              <h1 className="text-xl font-bold text-gray-900">Connect Chorus</h1>
-              <p className="text-gray-600 mt-0.5 text-sm">Connect your Chorus account to Docket</p>
+              <h1 className="text-xl font-bold text-gray-900">Connect Clari</h1>
+              <p className="text-gray-600 mt-0.5 text-sm">Connect your Clari account to Docket</p>
             </div>
             <button onClick={onClose} className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -91,11 +88,11 @@ export function ChorusConfigPanel({ onClose }: { onClose: () => void }) {
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="text-center max-w-sm">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 mx-auto mb-6">
-              <span className="text-3xl">🎵</span>
+              <span className="text-3xl">📊</span>
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Connect your Chorus account</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Connect your Clari account</h2>
             <p className="text-gray-600 mb-8">
-              Give Docket access to conversation intelligence from your top sales experts to enhance the Sales Knowledge Lake.
+              Give Docket access to revenue operations insights from your top sales experts to enhance the Sales Knowledge Lake.
             </p>
             <button
               onClick={handleConnect}
@@ -108,7 +105,7 @@ export function ChorusConfigPanel({ onClose }: { onClose: () => void }) {
                   <span>Connecting...</span>
                 </>
               ) : (
-                'Connect to Chorus'
+                'Connect to Clari'
               )}
             </button>
           </div>
@@ -126,8 +123,8 @@ export function ChorusConfigPanel({ onClose }: { onClose: () => void }) {
             <span className="text-sm font-bold text-white">C</span>
           </div>
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-gray-900">Chorus Configuration</h1>
-            <p className="text-gray-600 mt-0.5 text-sm">Select experts for external call ingestion</p>
+            <h1 className="text-xl font-bold text-gray-900">Clari Configuration</h1>
+            <p className="text-gray-600 mt-0.5 text-sm">Configure revenue operations insights</p>
           </div>
           <button onClick={onClose} className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -182,7 +179,7 @@ export function ChorusConfigPanel({ onClose }: { onClose: () => void }) {
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            Chorus integration help
+            Clari integration help
           </button>
           <div className="flex gap-3">
             <button onClick={onClose} className="rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">

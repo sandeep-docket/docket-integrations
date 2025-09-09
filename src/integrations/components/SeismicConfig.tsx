@@ -7,29 +7,28 @@ import { ConfigurationFooter } from './ConfigurationFooter'
 import { IntegrationAvatar } from './IntegrationAvatar'
 
 
-export function HighspotConfigPanel({ onClose }: { onClose: () => void }) {
+export function SeismicConfigPanel({ onClose }: { onClose: () => void }) {
   const { connections } = useIntegrationsStore()
-  const isAlreadyConnected = Boolean(connections['highspot'])
+  const isAlreadyConnected = Boolean(connections['seismic'])
   
   const [isConnected, setIsConnected] = useState(isAlreadyConnected)
   const [isConnecting, setIsConnecting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'official' | 'unofficial'>('all')
   
-  const [spots, setSpots] = useState<ContentItem[]>([
-    { id: 'spot1', name: 'Rev', description: 'Revenue enablement content and sales resources', lastModified: '2 days ago', contentCount: 45, isOfficial: true, isSelected: true },
-    { id: 'spot2', name: 'CSM', description: 'Customer success management materials and playbooks', lastModified: '1 day ago', contentCount: 32, isOfficial: true, isSelected: true },
-    { id: 'spot3', name: 'Sales', description: 'Sales methodology and process documentation', lastModified: '3 days ago', contentCount: 67, isOfficial: true, isSelected: true },
-    { id: 'spot4', name: 'GTM Prospects', description: 'Go-to-market strategy and prospect materials', lastModified: '1 week ago', contentCount: 28, isOfficial: true, isSelected: true },
-    { id: 'spot5', name: 'Products & Services', description: 'Product information and service descriptions', lastModified: '5 days ago', contentCount: 89, isOfficial: true, isSelected: true },
-    { id: 'spot6', name: 'Launch', description: 'Product launch materials and campaigns', lastModified: '2 weeks ago', contentCount: 23, isOfficial: true, isSelected: true },
-    { id: 'spot7', name: 'GTM Onboarding', description: 'Onboarding resources for new team members', lastModified: '1 day ago', contentCount: 34, isOfficial: true, isSelected: true },
-    { id: 'spot8', name: 'Competitive Intel', description: 'Competitive analysis and positioning materials', lastModified: '4 days ago', contentCount: 56, isOfficial: true, isSelected: true },
-    { id: 'spot9', name: 'Customer Evidence', description: 'Customer testimonials and case studies', lastModified: '1 week ago', contentCount: 41, isOfficial: true, isSelected: true },
+  const [content, setContent] = useState<ContentItem[]>([
+    { id: 'content1', name: 'Sales Enablement', description: 'Core sales enablement materials and resources', lastModified: '1 day ago', contentCount: 78, isOfficial: true, isSelected: true },
+    { id: 'content2', name: 'Product Training', description: 'Product knowledge and training materials', lastModified: '2 days ago', contentCount: 45, isOfficial: true, isSelected: true },
+    { id: 'content3', name: 'Competitive Battlecards', description: 'Competitive intelligence and positioning', lastModified: '3 days ago', contentCount: 32, isOfficial: true, isSelected: true },
+    { id: 'content4', name: 'Customer Success Stories', description: 'Case studies and customer testimonials', lastModified: '1 week ago', contentCount: 23, isOfficial: true, isSelected: true },
+    { id: 'content5', name: 'Proposal Templates', description: 'Standardized proposal and contract templates', lastModified: '5 days ago', contentCount: 19, isOfficial: true, isSelected: false },
+    { id: 'content6', name: 'Demo Scripts', description: 'Product demonstration scripts and guides', lastModified: '4 days ago', contentCount: 34, isOfficial: true, isSelected: true },
+    { id: 'content7', name: 'Objection Handling', description: 'Common objections and response strategies', lastModified: '2 weeks ago', contentCount: 28, isOfficial: true, isSelected: false },
+    { id: 'content8', name: 'Industry Solutions', description: 'Industry-specific solutions and use cases', lastModified: '1 day ago', contentCount: 56, isOfficial: true, isSelected: true },
   ])
 
   const columns: ColumnConfig[] = [
-    { key: 'name', label: 'Spot', width: 3 },
+    { key: 'name', label: 'Content', width: 3 },
     { key: 'description', label: 'Description', width: 5 },
     { 
       key: 'isOfficial', 
@@ -54,27 +53,27 @@ export function HighspotConfigPanel({ onClose }: { onClose: () => void }) {
     setIsConnecting(false)
   }
 
-  const toggleSpot = (spotId: string) => {
-    setSpots(prev => prev.map(spot => 
-      spot.id === spotId ? { ...spot, isSelected: !spot.isSelected } : spot
+  const toggleContent = (contentId: string) => {
+    setContent(prev => prev.map(item => 
+      item.id === contentId ? { ...item, isSelected: !item.isSelected } : item
     ))
   }
 
   const save = () => {
     const { configure } = useIntegrationsStore.getState()
-    configure('highspot', { 
-      selectedSpots: spots.filter(s => s.isSelected),
+    configure('seismic', { 
+      selectedContent: content.filter(c => c.isSelected),
       lastUpdated: new Date().toISOString()
     })
     onClose()
   }
 
-  const filteredSpots = spots.filter(spot => {
-    const matchesSearch = spot.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         (spot.description?.toLowerCase().includes(searchQuery.toLowerCase()) || false)
+  const filteredContent = content.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (item.description?.toLowerCase().includes(searchQuery.toLowerCase()) || false)
     const matchesStatus = statusFilter === 'all' || 
-                         (statusFilter === 'official' && spot.isOfficial) ||
-                         (statusFilter === 'unofficial' && !spot.isOfficial)
+                         (statusFilter === 'official' && item.isOfficial) ||
+                         (statusFilter === 'unofficial' && !item.isOfficial)
     return matchesSearch && matchesStatus
   })
 
@@ -82,10 +81,10 @@ export function HighspotConfigPanel({ onClose }: { onClose: () => void }) {
     return (
       <div className="flex h-full flex-col bg-white rounded-xl overflow-hidden">
         <ConfigurationHeader
-          providerId="highspot"
-          providerName="Highspot"
-          title="Connect Highspot"
-          subtitle="Connect your Highspot account"
+          providerId="seismic"
+          providerName="Seismic"
+          title="Connect Seismic"
+          subtitle="Connect your Seismic account"
           onClose={onClose}
         />
 
@@ -93,13 +92,13 @@ export function HighspotConfigPanel({ onClose }: { onClose: () => void }) {
           <div className="text-center max-w-sm">
             <div className="mx-auto mb-6">
               <IntegrationAvatar 
-                providerId="highspot"
-                providerName="Highspot"
+                providerId="seismic"
+                providerName="Seismic"
                 size="lg"
                 className="h-16 w-16 mx-auto"
               />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Connect your Highspot account</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Connect your Seismic account</h2>
             <p className="text-gray-600 mb-8">
               Access sales enablement content to enhance Sales Knowledge Lake with proven materials.
             </p>
@@ -114,7 +113,7 @@ export function HighspotConfigPanel({ onClose }: { onClose: () => void }) {
                   <span>Connecting...</span>
                 </>
               ) : (
-                'Connect to Highspot'
+                'Connect to Seismic'
               )}
             </button>
           </div>
@@ -126,22 +125,22 @@ export function HighspotConfigPanel({ onClose }: { onClose: () => void }) {
   return (
     <div className="flex h-full flex-col bg-white rounded-xl overflow-hidden">
       <ConfigurationHeader
-        providerId="highspot"
-        providerName="Highspot"
-        title="Highspot Configuration"
-        subtitle="Select Spots for content ingestion"
+        providerId="seismic"
+        providerName="Seismic"
+        title="Seismic Configuration"
+        subtitle="Select content for ingestion"
         onClose={onClose}
       />
 
       <div className="flex-1 overflow-y-auto p-6">
         <ContentSelectionTable
-          items={filteredSpots}
+          items={filteredContent}
           columns={columns}
-          onItemToggle={toggleSpot}
-          title="Select Spots"
+          onItemToggle={toggleContent}
+          title="Select Content"
           searchPlaceholder="Search here"
-          selectedLabel="spots selected for ingestion"
-          emptyMessage={searchQuery ? `No spots match "${searchQuery}"` : "No spots available"}
+          selectedLabel="content selected for ingestion"
+          emptyMessage={searchQuery ? `No content matches "${searchQuery}"` : "No content available"}
           filters={[
             {
               key: 'status',
@@ -166,7 +165,7 @@ export function HighspotConfigPanel({ onClose }: { onClose: () => void }) {
       <ConfigurationFooter
         onClose={onClose}
         onSave={save}
-        helpText="Highspot integration help"
+        helpText="Seismic integration help"
         saveVariant="blue"
         saveText="Save"
       />

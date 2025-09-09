@@ -6,18 +6,9 @@ type ZapierWorkflow = {
   name: string
   trigger: string
   action: string
-  status: 'active' | 'paused' | 'draft'
   lastRun: string
   runCount: number
-  successRate: number
   isSelected: boolean
-}
-
-type AutomationSettings = {
-  enableWebhooks: boolean
-  syncWorkflowData: boolean
-  trackAutomationMetrics: boolean
-  selectedWorkflows: string[]
 }
 
 export function ZapierConfigPanel({ onClose }: { onClose: () => void }) {
@@ -29,19 +20,12 @@ export function ZapierConfigPanel({ onClose }: { onClose: () => void }) {
   const [searchQuery, setSearchQuery] = useState('')
   
   const [workflows, setWorkflows] = useState<ZapierWorkflow[]>([
-    { id: 'z1', name: 'New Lead from Website → Salesforce', trigger: 'Webhook', action: 'Create Salesforce Lead', status: 'active', lastRun: '2 hours ago', runCount: 156, successRate: 98, isSelected: true },
-    { id: 'z2', name: 'Slack Mention → Create Zendesk Ticket', trigger: 'Slack Mention', action: 'Create Zendesk Ticket', status: 'active', lastRun: '1 day ago', runCount: 45, successRate: 95, isSelected: true },
-    { id: 'z3', name: 'New Deal → Notify Team in Slack', trigger: 'HubSpot Deal', action: 'Send Slack Message', status: 'active', lastRun: '3 hours ago', runCount: 89, successRate: 100, isSelected: false },
-    { id: 'z4', name: 'Form Submission → Add to Mailchimp', trigger: 'Form Submit', action: 'Add Mailchimp Contact', status: 'paused', lastRun: '1 week ago', runCount: 234, successRate: 92, isSelected: false },
-    { id: 'z5', name: 'Support Ticket → Create Notion Page', trigger: 'Zendesk Ticket', action: 'Create Notion Page', status: 'active', lastRun: '5 hours ago', runCount: 67, successRate: 97, isSelected: true },
+    { id: 'z1', name: 'New Lead from Website → Salesforce', trigger: 'Webhook', action: 'Create Salesforce Lead', lastRun: '2 hours ago', runCount: 156, isSelected: true },
+    { id: 'z2', name: 'Slack Mention → Create Zendesk Ticket', trigger: 'Slack Mention', action: 'Create Zendesk Ticket', lastRun: '1 day ago', runCount: 45, isSelected: true },
+    { id: 'z3', name: 'New Deal → Notify Team in Slack', trigger: 'HubSpot Deal', action: 'Send Slack Message', lastRun: '3 hours ago', runCount: 89, isSelected: false },
+    { id: 'z4', name: 'Form Submission → Add to Mailchimp', trigger: 'Form Submit', action: 'Add Mailchimp Contact', lastRun: '1 week ago', runCount: 234, isSelected: false },
+    { id: 'z5', name: 'Support Ticket → Create Notion Page', trigger: 'Zendesk Ticket', action: 'Create Notion Page', lastRun: '5 hours ago', runCount: 67, isSelected: true },
   ])
-
-  const [settings, setSettings] = useState<AutomationSettings>({
-    enableWebhooks: true,
-    syncWorkflowData: true,
-    trackAutomationMetrics: true,
-    selectedWorkflows: workflows.filter(w => w.isSelected).map(w => w.id)
-  })
 
   const handleConnect = async () => {
     setIsConnecting(true)
@@ -56,19 +40,20 @@ export function ZapierConfigPanel({ onClose }: { onClose: () => void }) {
     ))
   }
 
-  const updateSetting = <K extends keyof AutomationSettings>(key: K, value: AutomationSettings[K]) => {
-    setSettings(prev => ({ ...prev, [key]: value }))
-  }
-
   const save = () => {
     const { configure } = useIntegrationsStore.getState()
     configure('zapier', { 
-      settings,
       selectedWorkflows: workflows.filter(w => w.isSelected),
       lastUpdated: new Date().toISOString()
     })
     onClose()
   }
+
+  const filteredWorkflows = workflows.filter(workflow =>
+    workflow.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    workflow.trigger.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    workflow.action.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   if (!isConnected) {
     return (
@@ -126,12 +111,6 @@ export function ZapierConfigPanel({ onClose }: { onClose: () => void }) {
     )
   }
 
-  const selectedWorkflows = workflows.filter(w => w.isSelected)
-  const filteredWorkflows = workflows.filter(w => 
-    w.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    w.trigger.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    w.action.toLowerCase().includes(searchQuery.toLowerCase())
-  )
 
   return (
     <div className="flex h-full flex-col bg-white rounded-xl overflow-hidden">
@@ -155,59 +134,83 @@ export function ZapierConfigPanel({ onClose }: { onClose: () => void }) {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="space-y-6">
-          {/* Automation Settings */}
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Automation Settings</h3>
-            <div className="space-y-4">
-              <SettingRow
-                title="Enable webhooks"
-                description="Allow Zapier to send data updates to Docket"
-                checked={settings.enableWebhooks}
-                onChange={(checked) => updateSetting('enableWebhooks', checked)}
-              />
-              <SettingRow
-                title="Sync workflow data"
-                description="Track workflow performance and automation metrics"
-                checked={settings.syncWorkflowData}
-                onChange={(checked) => updateSetting('syncWorkflowData', checked)}
-              />
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-900">Automation Workflows</h3>
+            <div className="flex items-center gap-3">
+              {workflows.filter(w => w.isSelected).length > 0 && (
+                <div className="text-xs text-green-700 bg-green-50 px-2 py-1 rounded-full">
+                  ✓ {workflows.filter(w => w.isSelected).length} workflows selected
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Workflow Selection */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Automation Workflows</h3>
-              <div className="text-sm text-gray-600">
-                {selectedWorkflows.length} workflows selected
+          {/* Search */}
+          <div className="relative mb-4">
+            <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search workflows..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2.5 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+            />
+          </div>
+
+          {/* Table Header */}
+          <div className="mb-3 grid grid-cols-12 gap-4 px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide">
+            <div className="col-span-5">Workflow</div>
+            <div className="col-span-3">Trigger → Action</div>
+            <div className="col-span-2">Runs</div>
+            <div className="col-span-1">Updated</div>
+            <div className="col-span-1">Select</div>
+          </div>
+
+          {/* Workflows Table */}
+          <div className="space-y-1">
+            {filteredWorkflows.map((workflow) => (
+              <div 
+                key={workflow.id}
+                className={`grid grid-cols-12 gap-4 items-center p-3 rounded-lg border transition-all cursor-pointer ${
+                  workflow.isSelected ? 'border-gray-900 bg-gray-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                }`}
+                onClick={() => toggleWorkflow(workflow.id)}
+              >
+                <div className="col-span-5">
+                  <span className="text-sm font-medium text-gray-900 truncate">{workflow.name}</span>
+                </div>
+                <div className="col-span-3">
+                  <span className="text-xs text-gray-600 truncate">{workflow.trigger} → {workflow.action}</span>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-sm text-gray-600">{workflow.runCount}</span>
+                </div>
+                <div className="col-span-1">
+                  <span className="text-xs text-gray-500">{workflow.lastRun}</span>
+                </div>
+                <div className="col-span-1 flex justify-center">
+                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                    workflow.isSelected ? 'border-gray-900 bg-gray-900' : 'border-gray-300'
+                  }`}>
+                    {workflow.isSelected && (
+                      <svg className="h-2.5 w-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-
-            {/* Search */}
-            <div className="relative mb-4">
-              <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Search workflows..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2.5 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
-              />
-            </div>
-
-            <div className="space-y-3">
-              {filteredWorkflows.map((workflow) => (
-                <WorkflowCard
-                  key={workflow.id}
-                  workflow={workflow}
-                  onToggle={() => toggleWorkflow(workflow.id)}
-                />
-              ))}
-            </div>
+            ))}
           </div>
+
+          {filteredWorkflows.length === 0 && searchQuery && (
+            <div className="text-center py-12">
+              <div className="text-gray-500">No workflows match "{searchQuery}"</div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -234,76 +237,3 @@ export function ZapierConfigPanel({ onClose }: { onClose: () => void }) {
   )
 }
 
-function SettingRow({ title, description, checked, onChange }: { title: string; description: string; checked: boolean; onChange: (checked: boolean) => void }) {
-  return (
-    <div className="flex items-center justify-between p-3 rounded-lg border border-gray-200 bg-gray-50">
-      <div>
-        <div className="text-sm font-medium text-gray-900">{title}</div>
-        <div className="text-xs text-gray-600">{description}</div>
-      </div>
-      <button
-        onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-          checked ? 'bg-gray-900' : 'bg-gray-300'
-        }`}
-      >
-        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
-      </button>
-    </div>
-  )
-}
-
-function WorkflowCard({ workflow, onToggle }: { workflow: ZapierWorkflow; onToggle: () => void }) {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800'
-      case 'paused': return 'bg-yellow-100 text-yellow-800'
-      case 'draft': return 'bg-gray-100 text-gray-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  return (
-    <div 
-      className={`rounded-lg border p-4 transition-all cursor-pointer ${
-        workflow.isSelected ? 'border-gray-900 bg-gray-50' : 'border-gray-200 bg-white hover:border-gray-300'
-      }`}
-      onClick={onToggle}
-    >
-      <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
-          <span className="text-lg">⚡</span>
-        </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <h4 className="text-sm font-semibold text-gray-900">{workflow.name}</h4>
-            <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(workflow.status)}`}>
-              {workflow.status}
-            </span>
-          </div>
-          <div className="text-xs text-gray-600 space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="font-medium">Trigger:</span> {workflow.trigger}
-              <span>→</span>
-              <span className="font-medium">Action:</span> {workflow.action}
-            </div>
-            <div className="flex items-center gap-4">
-              <span>{workflow.runCount} runs</span>
-              <span>{workflow.successRate}% success rate</span>
-              <span>Last run: {workflow.lastRun}</span>
-            </div>
-          </div>
-        </div>
-        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-          workflow.isSelected ? 'border-gray-900 bg-gray-900' : 'border-gray-300'
-        }`}>
-          {workflow.isSelected && (
-            <svg className="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}

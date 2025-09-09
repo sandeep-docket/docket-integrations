@@ -31,7 +31,8 @@ export function IntercomConfigPanel({ onClose }: { onClose: () => void }) {
   const [isConnected, setIsConnected] = useState(isAlreadyConnected)
   const [isConnecting, setIsConnecting] = useState(false)
   const [activeTab, setActiveTab] = useState<'conversations' | 'articles'>('conversations')
-  const [searchQuery, setSearchQuery] = useState('')
+  const [conversationSearchQuery, setConversationSearchQuery] = useState('')
+  const [articleSearchQuery, setArticleSearchQuery] = useState('')
   
   const [conversations, setConversations] = useState<IntercomConversation[]>([
     { id: 'c1', subject: 'Integration setup help', customerEmail: 'john@acme.com', status: 'closed', priority: 'normal', assignee: 'Sarah Chen', created: '2 days ago', tags: ['integration', 'setup'], messageCount: 8, isSelected: true },
@@ -200,21 +201,28 @@ export function IntercomConfigPanel({ onClose }: { onClose: () => void }) {
               <input
                 type="text"
                 placeholder="Search conversations..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={conversationSearchQuery}
+                onChange={(e) => setConversationSearchQuery(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2.5 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
               />
             </div>
 
-            <div className="mb-4 text-sm text-gray-600">
-              {selectedConversations.length} conversations selected for ingestion
+            <div className="mb-4 flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                {selectedConversations.length} of {conversations.length} conversations selected
+              </div>
+              {selectedConversations.length > 0 && (
+                <div className="text-xs text-green-700 bg-green-50 px-2 py-1 rounded-full">
+                  ✓ Ready for ingestion
+                </div>
+              )}
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               {conversations.filter(c => 
-                c.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                c.customerEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                c.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+                c.subject.toLowerCase().includes(conversationSearchQuery.toLowerCase()) ||
+                c.customerEmail.toLowerCase().includes(conversationSearchQuery.toLowerCase()) ||
+                c.tags.some(tag => tag.toLowerCase().includes(conversationSearchQuery.toLowerCase()))
               ).map((conversation) => (
                 <ConversationCard
                   key={conversation.id}
@@ -231,14 +239,35 @@ export function IntercomConfigPanel({ onClose }: { onClose: () => void }) {
               <p className="text-gray-600">Select help articles to include in Sales Knowledge Lake</p>
             </div>
 
-            <div className="mb-4 text-sm text-gray-600">
-              {selectedArticles.length} articles selected for ingestion
+            {/* Search */}
+            <div className="relative mb-4">
+              <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search articles..."
+                value={articleSearchQuery}
+                onChange={(e) => setArticleSearchQuery(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2.5 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+              />
             </div>
 
-            <div className="space-y-3">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                {selectedArticles.length} of {articles.length} articles selected
+              </div>
+              {selectedArticles.length > 0 && (
+                <div className="text-xs text-green-700 bg-green-50 px-2 py-1 rounded-full">
+                  ✓ Ready for ingestion
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
               {articles.filter(a => 
-                a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                a.category.toLowerCase().includes(searchQuery.toLowerCase())
+                a.title.toLowerCase().includes(articleSearchQuery.toLowerCase()) ||
+                a.category.toLowerCase().includes(articleSearchQuery.toLowerCase())
               ).map((article) => (
                 <ArticleCard
                   key={article.id}
@@ -286,37 +315,35 @@ function ConversationCard({ conversation, onToggle }: { conversation: IntercomCo
 
   return (
     <div 
-      className={`rounded-lg border p-4 transition-all cursor-pointer ${
+      className={`rounded-lg border p-3 transition-all cursor-pointer ${
         conversation.isSelected ? 'border-gray-900 bg-gray-50' : 'border-gray-200 bg-white hover:border-gray-300'
       }`}
       onClick={onToggle}
     >
-      <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
-          <span className="text-lg">💬</span>
-        </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <h4 className="text-sm font-semibold text-gray-900">{conversation.subject}</h4>
-            <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(conversation.status)}`}>
-              {conversation.status}
-            </span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="flex h-6 w-6 items-center justify-center rounded bg-gray-100 flex-shrink-0">
+            <span className="text-sm">💬</span>
           </div>
-          <div className="text-xs text-gray-600 space-y-1">
-            <div>Customer: {conversation.customerEmail}</div>
-            <div>Assigned to: {conversation.assignee} • {conversation.messageCount} messages • {conversation.created}</div>
-          </div>
-          <div className="flex gap-1 mt-2">
-            {conversation.tags.map(tag => (
-              <span key={tag} className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">{tag}</span>
-            ))}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-medium text-gray-900 truncate">{conversation.subject}</h4>
+              <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium ${getStatusColor(conversation.status)}`}>
+                {conversation.status}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
+              <span className="truncate">{conversation.customerEmail}</span>
+              <span>{conversation.messageCount} msgs</span>
+              <span>{conversation.created}</span>
+            </div>
           </div>
         </div>
-        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-          conversation.isSelected ? 'border-gray-900 bg-gray-900' : 'border-gray-300'
+        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+          conversation.isSelected ? 'border-gray-900 bg-gray-900' : 'border-gray-300 group-hover:border-gray-400'
         }`}>
           {conversation.isSelected && (
-            <svg className="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="h-2.5 w-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
           )}
@@ -329,26 +356,30 @@ function ConversationCard({ conversation, onToggle }: { conversation: IntercomCo
 function ArticleCard({ article, onToggle }: { article: IntercomArticle; onToggle: () => void }) {
   return (
     <div 
-      className={`rounded-lg border p-4 transition-all cursor-pointer ${
+      className={`rounded-lg border p-3 transition-all cursor-pointer ${
         article.isSelected ? 'border-gray-900 bg-gray-50' : 'border-gray-200 bg-white hover:border-gray-300'
       }`}
       onClick={onToggle}
     >
-      <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
-          <span className="text-lg">📄</span>
-        </div>
-        <div className="flex-1">
-          <h4 className="text-sm font-semibold text-gray-900 mb-1">{article.title}</h4>
-          <div className="text-xs text-gray-600">
-            {article.category} • {article.views} views • Updated {article.lastModified}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="flex h-6 w-6 items-center justify-center rounded bg-gray-100 flex-shrink-0">
+            <span className="text-sm">📄</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="text-sm font-medium text-gray-900 truncate">{article.title}</h4>
+            <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
+              <span>{article.category}</span>
+              <span>{article.views} views</span>
+              <span>{article.lastModified}</span>
+            </div>
           </div>
         </div>
-        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-          article.isSelected ? 'border-gray-900 bg-gray-900' : 'border-gray-300'
+        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+          article.isSelected ? 'border-gray-900 bg-gray-900' : 'border-gray-300 group-hover:border-gray-400'
         }`}>
           {article.isSelected && (
-            <svg className="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="h-2.5 w-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
           )}

@@ -5,6 +5,7 @@ import { useIntegrationsStore } from '../store'
 import type { IntegrationProvider } from '../types'
 import toast from 'react-hot-toast'
 import { ConfigureDrawer } from './ConfigureDrawer'
+import { IntegrationAvatar } from './IntegrationAvatar'
 
 export function IntegrationCard({ provider, connected }: { provider: IntegrationProvider; connected: boolean }) {
   const { connect } = useIntegrationsStore()
@@ -26,9 +27,12 @@ export function IntegrationCard({ provider, connected }: { provider: Integration
       {/* Main content */}
       <div className="flex items-center gap-4 p-4">
         {/* Icon */}
-        <div className="h-12 w-12 rounded-[9.6px] border border-black/10 bg-white flex items-center justify-center">
-          <div className="text-lg font-bold text-gray-600">{provider.name[0]}</div>
-        </div>
+        <IntegrationAvatar 
+          providerId={provider.id}
+          providerName={provider.name}
+          size="lg"
+          className="rounded-[9.6px]"
+        />
         
         {/* Content */}
         <div className="flex-1 min-w-0">
