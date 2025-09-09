@@ -2,7 +2,7 @@ import { useState, Fragment } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { useIntegrationsStore } from '../store'
 import type { IntegrationProvider } from '../types'
-import { FolderTree, FolderContents } from './FolderBrowser'
+import { SimpleFolderTree } from './SimpleFolderTree'
 import type { FolderStructure } from './FolderBrowser'
 
 type DocumentItem = {
@@ -197,8 +197,6 @@ export function DocumentConfigPanel({ provider, onClose }: { provider: Integrati
   const [showDisconnectModal, setShowDisconnectModal] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [advancedMode, setAdvancedMode] = useState(false)
-  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
-  const [breadcrumbs, setBreadcrumbs] = useState<{id: string, name: string}[]>([])
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
   
   const config = getProviderConfig(provider.id)
@@ -228,26 +226,9 @@ export function DocumentConfigPanel({ provider, onClose }: { provider: Integrati
     }))
   }
 
-  // Folder navigation functions
+  // Simple folder structure
   const [folderStructure] = useState<FolderStructure[]>(provider.id === 'google-drive' ? getFolderStructure() : [])
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set())
-
-  const navigateToFolder = (folderId: string, folderName: string) => {
-    setCurrentFolderId(folderId)
-    setBreadcrumbs(prev => [...prev, { id: folderId, name: folderName }])
-  }
-
-  const navigateToBreadcrumb = (index: number) => {
-    if (index === -1) {
-      // Navigate to root
-      setCurrentFolderId(null)
-      setBreadcrumbs([])
-    } else {
-      const newBreadcrumbs = breadcrumbs.slice(0, index + 1)
-      setBreadcrumbs(newBreadcrumbs)
-      setCurrentFolderId(newBreadcrumbs[index].id)
-    }
-  }
 
   const toggleFileSelection = (fileId: string) => {
     setSelectedFiles(prev => {
@@ -484,63 +465,20 @@ export function DocumentConfigPanel({ provider, onClose }: { provider: Integrati
                 )}
               </div>
             ) : advancedMode && provider.id === 'google-drive' ? (
-              // Enhanced Folder Browser for Google Drive
-              <div className="flex-1 flex">
-                {/* Folder Tree - Left Panel */}
-                <div className="w-80 border-r border-gray-200 bg-gray-50">
-                  <div className="p-4 border-b border-gray-200">
-                    <h4 className="text-sm font-semibold text-gray-900 mb-2">Folder Structure</h4>
-                    <div className="text-xs text-gray-600">{selectedFiles.size} files selected</div>
-                  </div>
-                  <div className="overflow-y-auto h-full">
-                    <FolderTree
-                      folders={folderStructure}
-                      expandedFolders={expandedFolders}
-                      currentFolderId={currentFolderId}
-                      onFolderClick={navigateToFolder}
-                      onToggleExpand={toggleFolderExpansion}
-                    />
-                  </div>
+              // Simple Tree Structure for Google Drive
+              <div className="p-6">
+                <div className="mb-4">
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Folder Structure</h3>
+                  <div className="text-sm text-gray-600">{selectedFiles.size} files selected</div>
                 </div>
-
-                {/* File Browser - Right Panel */}
-                <div className="flex-1 flex flex-col">
-                  {/* Breadcrumbs */}
-                  <div className="p-4 border-b border-gray-200 bg-white">
-                    <div className="flex items-center gap-2 text-sm">
-                      <button 
-                        onClick={() => navigateToBreadcrumb(-1)}
-                        className="text-gray-600 hover:text-gray-900 transition-colors font-medium"
-                      >
-                        📁 My Drive
-                      </button>
-                      {breadcrumbs.map((crumb, index) => (
-                        <Fragment key={crumb.id}>
-                          <svg className="h-3 w-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                          <button 
-                            onClick={() => navigateToBreadcrumb(index)}
-                            className="text-gray-600 hover:text-gray-900 transition-colors font-medium"
-                          >
-                            {crumb.name}
-                          </button>
-                        </Fragment>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* File List */}
-                  <div className="flex-1 overflow-y-auto p-4">
-                    <FolderContents
-                      folderId={currentFolderId}
-                      folderStructure={folderStructure}
-                      selectedFiles={selectedFiles}
-                      onFileToggle={toggleFileSelection}
-                      onFolderNavigate={navigateToFolder}
-                    />
-                  </div>
-                </div>
+                
+                <SimpleFolderTree
+                  folders={folderStructure}
+                  selectedFiles={selectedFiles}
+                  onFileToggle={toggleFileSelection}
+                  onFolderToggle={toggleFolderExpansion}
+                  expandedFolders={expandedFolders}
+                />
               </div>
             ) : (
               // Account grouped view

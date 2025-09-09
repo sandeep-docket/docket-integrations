@@ -29,6 +29,7 @@ export function MindtickleConfigPanel({ onClose }: { onClose: () => void }) {
     { id: 'h5', name: 'Customer Success Training', description: 'Customer onboarding and success strategies', contentCount: 23, lastModified: '1 day ago', isSelected: false },
   ])
 
+
   const handleConnect = async () => {
     setIsConnecting(true)
     await new Promise(resolve => setTimeout(resolve, 2000))
@@ -53,7 +54,7 @@ export function MindtickleConfigPanel({ onClose }: { onClose: () => void }) {
 
   const filteredHubs = hubs.filter(hub =>
     hub.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    hub.description.toLowerCase().includes(searchQuery.toLowerCase())
+    (hub.description?.toLowerCase().includes(searchQuery.toLowerCase()) || false)
   )
 
   if (!isConnected) {
