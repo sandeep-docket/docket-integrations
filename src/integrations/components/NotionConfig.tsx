@@ -33,11 +33,9 @@ export function NotionConfigPanel({ onClose }: { onClose: () => void }) {
     setIsConnecting(false)
   }
 
-
   if (!isConnected) {
     return (
       <div className="flex h-full flex-col bg-white rounded-xl overflow-hidden">
-        {/* Header */}
         <div className="border-b border-gray-200 px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -60,7 +58,6 @@ export function NotionConfigPanel({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        {/* Connection Content */}
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="text-center max-w-sm">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 mx-auto mb-6">
@@ -99,7 +96,6 @@ export function NotionConfigPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="flex h-full flex-col bg-white rounded-xl overflow-hidden">
-      {/* Header */}
       <div className="border-b border-gray-200 px-6 py-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -124,118 +120,73 @@ export function NotionConfigPanel({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
-      {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="space-y-6">
-          {/* Info Banner */}
-          <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
-            <div className="flex items-start gap-3">
-              <svg className="h-5 w-5 text-blue-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div>
-                <h4 className="text-sm font-semibold text-blue-900">Page Management in Notion</h4>
-                <p className="text-xs text-blue-700 mt-1">
-                  Adding and removing pages is done within Notion using the connection settings. 
-                  This view shows which pages are currently contributing to your Sales Knowledge Lake.
-                </p>
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-900">Pages & Databases</h3>
+            <div className="flex items-center gap-3">
+              {connectedPages.length > 0 && (
+                <div className="text-xs text-green-700 bg-green-50 px-2 py-1 rounded-full">
+                  ✓ {connectedPages.length} items synced
+                </div>
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => window.open('https://notion.so', '_blank')}
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <span className="text-sm">📄</span>
+                  Add Page
+                </button>
+                <button
+                  onClick={() => window.open('https://notion.so', '_blank')}
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <span className="text-sm">🗂️</span>
+                  Add Database
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Connected Pages */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Connected Pages & Databases</h3>
-              <div className="text-sm text-gray-600">
-                {connectedPages.length} pages contributing to Knowledge Lake
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              {connectedPages.map((page) => (
-                <div key={page.id} className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 bg-gray-50">
-                  <div className="text-xl">{page.icon}</div>
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">{page.name}</div>
-                    <div className="text-xs text-gray-500">{page.path} • Updated {page.lastModified}</div>
-                  </div>
-                  <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                    page.type === 'database' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-                  }`}>
-                    {page.type}
-                  </span>
+          <div className="space-y-2">
+            {connectedPages.map((page) => (
+              <div key={page.id} className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 bg-gray-50">
+                <div className="text-lg">{page.icon}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-gray-900 truncate">{page.name}</div>
+                  <div className="text-xs text-gray-500">{page.path} • {page.type} • Updated {page.lastModified}</div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
 
-          {/* Management Instructions */}
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Managing Page Access</h3>
-            <div className="space-y-4">
-              <div className="rounded-lg border border-gray-200 bg-white p-4">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-100">
-                    <svg className="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h5 className="text-sm font-semibold text-gray-900 mb-2">Adding Pages to Docket</h5>
-                    <ol className="text-xs text-gray-600 space-y-1 list-decimal list-inside">
-                      <li>In Notion, navigate to the page you want to add</li>
-                      <li>Click the 3 dots menu (⋯) in the top right</li>
-                      <li>Select "Connect to" under "Connections"</li>
-                      <li>Choose "Docket Inc" and click "Confirm"</li>
-                    </ol>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="rounded-lg border border-gray-200 bg-white p-4">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-100">
-                    <svg className="h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h5 className="text-sm font-semibold text-gray-900 mb-2">Removing Pages from Docket</h5>
-                    <ol className="text-xs text-gray-600 space-y-1 list-decimal list-inside">
-                      <li>In Notion, navigate to the page you want to remove</li>
-                      <li>Click the 3 dots menu (⋯) in the top right</li>
-                      <li>Select "Docket Inc" under "Connections"</li>
-                      <li>Click "Disconnect" and then "Confirm"</li>
-                    </ol>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="rounded-lg border border-gray-200 bg-white p-4">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100">
-                    <svg className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h5 className="text-sm font-semibold text-gray-900 mb-2">Manage All Connections</h5>
-                    <ol className="text-xs text-gray-600 space-y-1 list-decimal list-inside">
-                      <li>In Notion, go to "Settings and Members" in the left sidebar</li>
-                      <li>Navigate to "My connections" tab</li>
-                      <li>Find "Docket Inc" and click the 3 dots menu</li>
-                      <li>Select "Access selected pages" to review and update</li>
-                    </ol>
-                  </div>
-                </div>
+          {connectedPages.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-4xl mb-4">📝</div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No pages connected</h3>
+              <p className="text-gray-600 mb-6">Connect pages and databases from Notion to start syncing content</p>
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={() => window.open('https://notion.so', '_blank')}
+                  className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 transition-colors"
+                >
+                  <span className="text-sm">📄</span>
+                  Add Page
+                </button>
+                <button
+                  onClick={() => window.open('https://notion.so', '_blank')}
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <span className="text-sm">🗂️</span>
+                  Add Database
+                </button>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Footer */}
       <div className="border-t border-gray-200 bg-gray-50 px-6 py-6">
         <div className="flex items-center justify-between">
           <button className="inline-flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900 font-medium">

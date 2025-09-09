@@ -1,5 +1,10 @@
 import { useState } from 'react'
 import { useIntegrationsStore } from '../store'
+import { ContentSelectionTable } from './ContentSelectionTable'
+import type { ContentItem, ColumnConfig } from './ContentSelectionTable'
+import { ConfigurationHeader } from './ConfigurationHeader'
+import { ConfigurationFooter } from './ConfigurationFooter'
+
 
 export function CrayonConfigPanel({ onClose }: { onClose: () => void }) {
   const { connections } = useIntegrationsStore()
@@ -9,6 +14,26 @@ export function CrayonConfigPanel({ onClose }: { onClose: () => void }) {
   const [isConnecting, setIsConnecting] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [typeFilter, setTypeFilter] = useState<'all' | string>('all')
+  
+  const [content, setContent] = useState<ContentItem[]>([
+    { id: 'c1', name: 'Competitor A Battle Card', type: 'battlecard', competitor: 'Competitor A', lastUpdated: '2 days ago', status: 'active', isSelected: true },
+    { id: 'c2', name: 'Market Intelligence Q1', type: 'intelligence', competitor: 'Market Analysis', lastUpdated: '1 week ago', status: 'active', isSelected: true },
+    { id: 'c3', name: 'Competitor B Positioning', type: 'positioning', competitor: 'Competitor B', lastUpdated: '3 days ago', status: 'active', isSelected: true },
+    { id: 'c4', name: 'Competitor C Analysis', type: 'analysis', competitor: 'Competitor C', lastUpdated: '1 day ago', status: 'active', isSelected: false },
+    { id: 'c5', name: 'Industry Trends Report', type: 'intelligence', competitor: 'Industry', lastUpdated: '5 days ago', status: 'active', isSelected: true },
+    { id: 'c6', name: 'Competitor D Battle Card', type: 'battlecard', competitor: 'Competitor D', lastUpdated: '1 week ago', status: 'draft', isSelected: false },
+    { id: 'c7', name: 'Pricing Comparison Analysis', type: 'analysis', competitor: 'Multi-Competitor', lastUpdated: '4 days ago', status: 'active', isSelected: true },
+  ])
+
+  const columns: ColumnConfig[] = [
+    { key: 'name', label: 'Content', width: 4 },
+    { key: 'competitor', label: 'Competitor', width: 3 },
+    { key: 'type', label: 'Type', width: 2, render: (item) => <span className="text-xs text-gray-600 capitalize">{item.type}</span> },
+    { key: 'lastUpdated', label: 'Updated', width: 2, render: (item) => <span className="text-xs text-gray-500">{item.lastUpdated}</span> },
+    { key: 'select', label: 'Select', width: 1 }
+  ]
 
   const handleConnect = async () => {
     setIsConnecting(true)
@@ -16,6 +41,30 @@ export function CrayonConfigPanel({ onClose }: { onClose: () => void }) {
     setIsConnected(true)
     setIsConnecting(false)
   }
+
+  const toggleContent = (contentId: string) => {
+    setContent(prev => prev.map(item => 
+      item.id === contentId ? { ...item, isSelected: !item.isSelected } : item
+    ))
+  }
+
+  const save = () => {
+    const { configure } = useIntegrationsStore.getState()
+    configure('crayon', { 
+      selectedContent: content.filter(c => c.isSelected),
+      credentials: { email, password },
+      lastUpdated: new Date().toISOString()
+    })
+    onClose()
+  }
+
+  const filteredContent = content.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         item.competitor.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesType = typeFilter === 'all' || item.type === typeFilter
+    return matchesSearch && matchesType
+  })
+
 
 
   if (!isConnected) {
@@ -87,79 +136,51 @@ export function CrayonConfigPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="flex h-full flex-col bg-white rounded-xl overflow-hidden">
-      <div className="border-b border-gray-200 px-6 py-6">
-        <div className="flex items-center gap-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-gray-800 to-gray-900">
-            <span className="text-sm font-bold text-white">C</span>
-          </div>
-          <div className="flex-1">
-            <h1 className="text-xl font-bold text-gray-900">Crayon Configuration</h1>
-            <p className="text-gray-600 mt-0.5 text-sm">Battle card content ingestion active</p>
-          </div>
-          <button onClick={onClose} className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      </div>
+      <ConfigurationHeader
+        providerId="crayon"
+        providerName="Crayon"
+        title="Crayon Configuration"
+        subtitle="Select competitive intelligence content"
+        onClose={onClose}
+      />
 
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="space-y-6">
-          <div className="rounded-lg bg-green-50 border border-green-200 p-4">
-            <div className="flex items-start gap-3">
-              <svg className="h-5 w-5 text-green-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <div>
-                <h4 className="text-sm font-semibold text-green-900">Automatic Ingestion Active</h4>
-                <p className="text-xs text-green-700 mt-1">
-                  Battle card content ingestion is now active. All competitive intelligence and battle cards 
-                  will be automatically synced to your Sales Knowledge Lake.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-gray-200 bg-white p-4">
-            <h3 className="text-lg font-bold text-gray-900 mb-3">Content Being Ingested</h3>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                <span className="text-sm text-gray-900">Competitive battle cards</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                <span className="text-sm text-gray-900">Competitor intelligence reports</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                <span className="text-sm text-gray-900">Market positioning content</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                <span className="text-sm text-gray-900">Win/loss analysis</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ContentSelectionTable
+          items={filteredContent}
+          columns={columns}
+          onItemToggle={toggleContent}
+          title="Competitive Intelligence Content"
+          searchPlaceholder="Search content..."
+          selectedLabel="items selected for ingestion"
+          emptyMessage={searchQuery ? `No content matches "${searchQuery}"` : typeFilter !== 'all' ? `No ${typeFilter} content available` : "No content available"}
+          filters={[
+            {
+              key: 'type',
+              label: 'Content Type',
+              options: [
+                { value: 'all', label: 'All Types' },
+                { value: 'battlecard', label: 'Battle Cards' },
+                { value: 'intelligence', label: 'Intelligence' },
+                { value: 'positioning', label: 'Positioning' },
+                { value: 'analysis', label: 'Analysis' }
+              ],
+              value: typeFilter
+            }
+          ]}
+          onFilter={(_, value) => setTypeFilter(value)}
+          showReset={true}
+          onReset={() => {
+            setSearchQuery('')
+            setTypeFilter('all')
+          }}
+        />
       </div>
 
-      <div className="border-t border-gray-200 bg-gray-50 px-6 py-6">
-        <div className="flex items-center justify-between">
-          <button className="inline-flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900 font-medium">
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Crayon integration help
-          </button>
-          <div className="flex gap-3">
-            <button onClick={onClose} className="rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-              Done
-            </button>
-          </div>
-        </div>
-      </div>
+      <ConfigurationFooter
+        onClose={onClose}
+        onSave={save}
+        helpText="Crayon integration help"
+      />
     </div>
   )
 }

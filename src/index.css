@@ -11,3 +11,43 @@ html, body, #root {
 body {
   @apply bg-gray-50 text-gray-900 antialiased;
 }
+
+/* Custom slider styling for stepped sliders */
+.slider-with-steps {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.slider-with-steps::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #111827;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.slider-with-steps::-moz-range-thumb {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #111827;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.slider-with-steps:focus {
+  outline: none;
+}
+
+.slider-with-steps:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+.slider-with-steps:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}

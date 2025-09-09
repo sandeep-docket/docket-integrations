@@ -14,12 +14,15 @@ import { ZendeskConfigPanel } from './ZendeskConfig'
 import { IntercomConfigPanel } from './IntercomConfig'
 import { ZapierConfigPanel } from './ZapierConfig'
 import { ChorusConfigPanel } from './ChorusConfig'
+import { ClariConfigPanel } from './ClariConfig'
 import { MindtickleConfigPanel } from './MindtickleConfig'
 import { SalesloftConfigPanel } from './SalesloftConfig'
 import { SalesforceKnowledgeConfigPanel } from './SalesforceKnowledgeConfig'
 import { CrayonConfigPanel } from './CrayonConfig'
 import { JiraConfigPanel } from './JiraConfig'
 import { GoogleCalendarConfigPanel } from './GoogleCalendarConfig'
+import { Document360ConfigPanel } from './Document360Config'
+import { SeismicConfigPanel } from './SeismicConfig'
 
 export function ConfigureDrawer({ provider, open, onClose }: { provider: IntegrationProvider; open: boolean; onClose: () => void }) {
 
@@ -39,8 +42,10 @@ export function ConfigureDrawer({ provider, open, onClose }: { provider: Integra
               <ConfluenceConfigPanel onClose={onClose} />
             ) : provider.id === 'google-sheets' ? (
               <GoogleSheetsConfigPanel onClose={onClose} />
-            ) : (provider.id === 'highspot' || provider.id === 'seismic') ? (
+            ) : provider.id === 'highspot' ? (
               <HighspotConfigPanel onClose={onClose} />
+            ) : provider.id === 'seismic' ? (
+              <SeismicConfigPanel onClose={onClose} />
             ) : (provider.id === 'google-drive' || provider.id === 'sharepoint') ? (
               <DocumentConfigPanel provider={provider} onClose={onClose} />
             ) : (provider.id === 'gong' || provider.id === 'avoma') ? (
@@ -51,8 +56,10 @@ export function ConfigureDrawer({ provider, open, onClose }: { provider: Integra
               <IntercomConfigPanel onClose={onClose} />
             ) : provider.id === 'zapier' ? (
               <ZapierConfigPanel onClose={onClose} />
-            ) : (provider.id === 'chorus' || provider.id === 'clari') ? (
+            ) : provider.id === 'chorus' ? (
               <ChorusConfigPanel onClose={onClose} />
+            ) : provider.id === 'clari' ? (
+              <ClariConfigPanel onClose={onClose} />
             ) : (provider.id === 'mindtickle' || provider.id === 'mindtickle-call-ai') ? (
               <MindtickleConfigPanel onClose={onClose} />
             ) : provider.id === 'salesloft' ? (
@@ -62,7 +69,7 @@ export function ConfigureDrawer({ provider, open, onClose }: { provider: Integra
             ) : provider.id === 'crayon' ? (
               <CrayonConfigPanel onClose={onClose} />
             ) : provider.id === 'document360' ? (
-              <ZendeskConfigPanel onClose={onClose} />
+              <Document360ConfigPanel onClose={onClose} />
             ) : provider.id === 'jira' ? (
               <JiraConfigPanel onClose={onClose} />
             ) : provider.id === 'google-calendar' ? (

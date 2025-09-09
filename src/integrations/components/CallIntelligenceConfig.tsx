@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useIntegrationsStore } from '../store'
 import type { IntegrationProvider } from '../types'
+import type { IngestionRule } from './IngestionRules'
 
 type CallSettings = {
   syncCallRecordings: boolean
@@ -15,7 +16,7 @@ type CallSettings = {
   includeInternalCalls: boolean
   minCallDuration: number
   selectedSMEs: string[]
-  learningRules: LearningRule[]
+  learningRules: IngestionRule[]
 }
 
 type SME = {
@@ -27,16 +28,6 @@ type SME = {
   tenure: string
   callCount: number
   isSelected: boolean
-}
-
-type LearningRule = {
-  id: string
-  name: string
-  callType: 'external' | 'internal' | 'all'
-  selectedUsers?: string[]
-  meetingTitleKeywords: string[]
-  dealStages?: string[]
-  isActive: boolean
 }
 
 type CallDataType = {
@@ -113,7 +104,7 @@ export function CallIntelligenceConfigPanel({ provider, onClose }: { provider: I
   const config = getProviderConfig(provider.id)
   const [dataTypes] = useState<CallDataType[]>(config.dataTypes)
   const [smes, setSMEs] = useState<SME[]>(config.mockSMEs || [])
-  const [learningRules, setLearningRules] = useState<LearningRule[]>([
+  const [learningRules, setLearningRules] = useState<IngestionRule[]>([
     { id: 'rule1', name: 'External Customer Calls', callType: 'external', meetingTitleKeywords: ['demo', 'discovery', 'proposal'], selectedUsers: ['sme1', 'sme2'], isActive: true },
     { id: 'rule2', name: 'Internal Strategy Meetings', callType: 'internal', meetingTitleKeywords: ['standup', 'planning', 'review'], dealStages: ['Discovery', 'Proposal'], isActive: false }
   ])
@@ -272,31 +263,46 @@ export function CallIntelligenceConfigPanel({ provider, onClose }: { provider: I
 
           {/* Learning Rules */}
           <div>
-            <div className="mb-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Learning Rules</h3>
-              <p className="text-gray-600">Configure which calls Docket should learn from. For Call Type select "External" to capture customer conversations.</p>
-            </div>
-            
-            <div className="space-y-4">
-              {learningRules.map((rule) => (
-                <LearningRuleCard
-                  key={rule.id}
-                  rule={rule}
-                  smes={smes}
-                  onToggle={() => toggleLearningRule(rule.id)}
-                  onDelete={() => setLearningRules(prev => prev.filter(r => r.id !== rule.id))}
-                />
-              ))}
-              
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Learning Rules</h3>
               <button
-                onClick={() => setShowNewRuleModal(true)}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 py-4 text-sm font-medium text-gray-600 hover:border-gray-400 hover:bg-gray-50 transition-all"
+                onClick={() => setShowNewRuleModal(!showNewRuleModal)}
+                className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                + New Rule
+                {showNewRuleModal ? 'Cancel' : 'Add Rule'}
               </button>
+            </div>
+            
+            {/* Rules Table */}
+            <div className="space-y-2">
+              {learningRules.map((rule) => (
+                <CompactRuleCard
+                  key={rule.id}
+                  rule={rule}
+                  smes={smes}
+                  onToggle={() => toggleLearningRule(rule.id)}
+                  onEdit={(updatedRule) => setLearningRules(prev => prev.map(r => r.id === rule.id ? updatedRule : r))}
+                  onDelete={() => setLearningRules(prev => prev.filter(r => r.id !== rule.id))}
+                />
+              ))}
+              
+              {/* Inline Create Rule Form */}
+              {showNewRuleModal && (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-4">Create New Learning Rule</h4>
+                  <InlineRuleForm
+                    smes={smes}
+                    onSave={(rule) => {
+                      setLearningRules(prev => [...prev, { ...rule, id: `rule-${Date.now()}`, isActive: true }])
+                      setShowNewRuleModal(false)
+                    }}
+                    onCancel={() => setShowNewRuleModal(false)}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -319,16 +325,39 @@ export function CallIntelligenceConfigPanel({ provider, onClose }: { provider: I
                   <div className="flex-1">
                     <h4 className="text-base font-semibold text-gray-900 mb-1">Minimum call duration</h4>
                     <p className="text-sm text-gray-600 mb-4">Only process calls longer than this duration</p>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="range"
-                        min="1"
-                        max="30"
-                        value={settings.minCallDuration}
-                        onChange={(e) => updateSetting('minCallDuration', parseInt(e.target.value))}
-                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                      />
-                      <span className="text-sm font-medium text-gray-900 min-w-[3rem]">{settings.minCallDuration} min</span>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-sm text-gray-600">
+                        <span>0 min</span>
+                        <span>1 min</span>
+                        <span>5 min</span>
+                        <span>10 min</span>
+                        <span>15 min</span>
+                        <span>30 min</span>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="range"
+                          min="0"
+                          max="5"
+                          step="1"
+                          value={[0, 1, 5, 10, 15, 30].indexOf(settings.minCallDuration)}
+                          onChange={(e) => {
+                            const breakpoints = [0, 1, 5, 10, 15, 30];
+                            updateSetting('minCallDuration', breakpoints[parseInt(e.target.value)]);
+                          }}
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-with-steps"
+                        />
+                        <div className="flex justify-between absolute top-1/2 left-0 right-0 transform -translate-y-1/2 pointer-events-none">
+                          {[0, 1, 5, 10, 15, 30].map((_, index) => (
+                            <div key={index} className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <span className="text-sm font-medium text-gray-900 bg-gray-100 px-3 py-1 rounded-full">
+                          {settings.minCallDuration} minutes
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -361,130 +390,10 @@ export function CallIntelligenceConfigPanel({ provider, onClose }: { provider: I
         </div>
       </div>
 
-      {/* New Rule Modal */}
-      {showNewRuleModal && (
-        <NewRuleModal
-          smes={smes}
-          onClose={() => setShowNewRuleModal(false)}
-          onSave={(rule) => {
-            setLearningRules(prev => [...prev, { ...rule, id: `rule-${Date.now()}`, isActive: true }])
-            setShowNewRuleModal(false)
-          }}
-        />
-      )}
     </div>
   )
 }
 
-
-function LearningRuleCard({ 
-  rule, 
-  smes,
-  onToggle,
-  onDelete 
-}: { 
-  rule: LearningRule
-  smes: SME[]
-  onToggle: () => void
-  onDelete: () => void
-}) {
-  const getCallTypeIcon = (type: string) => {
-    switch (type) {
-      case 'external': return '👥'
-      case 'internal': return '🏢'
-      case 'all': return '🌐'
-      default: return '📞'
-    }
-  }
-
-  const getCallTypeColor = (type: string) => {
-    switch (type) {
-      case 'external': return 'bg-blue-100 text-blue-800'
-      case 'internal': return 'bg-gray-100 text-gray-800'
-      case 'all': return 'bg-green-100 text-green-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  return (
-    <div className="group rounded-xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md transition-all">
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-4 flex-1">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 text-lg">
-            {getCallTypeIcon(rule.callType)}
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <h4 className="text-base font-semibold text-gray-900">{rule.name}</h4>
-              <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${getCallTypeColor(rule.callType)}`}>
-                {rule.callType} calls
-              </span>
-            </div>
-            <div className="text-sm text-gray-600 mb-3">
-              {rule.callType === 'external' && 'Learn from customer and prospect conversations'}
-              {rule.callType === 'internal' && 'Learn from internal team discussions and strategy meetings'}
-              {rule.callType === 'all' && 'Learn from all call types and conversations'}
-            </div>
-            
-            {/* Rule Details */}
-            <div className="space-y-2">
-              {rule.selectedUsers && rule.selectedUsers.length > 0 && (
-                <div className="text-xs text-gray-600">
-                  <span className="font-medium">Users:</span> {rule.selectedUsers.map(userId => {
-                    const user = smes.find(sme => sme.id === userId)
-                    return user ? user.name : userId
-                  }).join(', ')}
-                </div>
-              )}
-              
-              {rule.meetingTitleKeywords.length > 0 && (
-                <div className="text-xs text-gray-600">
-                  <span className="font-medium">Keywords:</span>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {rule.meetingTitleKeywords.map(keyword => (
-                      <span key={keyword} className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs">
-                        {keyword}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {rule.dealStages && rule.dealStages.length > 0 && (
-                <div className="text-xs text-gray-600">
-                  <span className="font-medium">Deal stages:</span> {rule.dealStages.join(', ')}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onDelete}
-            className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-600 rounded transition-all"
-            title="Delete rule"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </button>
-          <button
-            onClick={onToggle}
-            className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 ${
-              rule.isActive ? 'bg-gray-900' : 'bg-gray-300'
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                rule.isActive ? 'translate-x-6' : 'translate-x-1'
-              }`}
-            />
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function SMEMultiSelect({
   smes,
@@ -612,20 +521,121 @@ function SMEMultiSelect({
   )
 }
 
-function NewRuleModal({
+function CompactRuleCard({ 
+  rule, 
   smes,
-  onClose,
-  onSave
-}: {
+  onToggle,
+  onEdit,
+  onDelete 
+}: { 
+  rule: IngestionRule
   smes: SME[]
-  onClose: () => void
-  onSave: (rule: Omit<LearningRule, 'id' | 'isActive'>) => void
+  onToggle: () => void
+  onEdit: (rule: IngestionRule) => void
+  onDelete: () => void
 }) {
-  const [ruleName, setRuleName] = useState('')
-  const [callType, setCallType] = useState<'external' | 'internal' | 'all'>('external')
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([])
-  const [meetingTitleKeywords, setMeetingTitleKeywords] = useState<string[]>([])
-  const [dealStages, setDealStages] = useState<string[]>([])
+  const [isEditing, setIsEditing] = useState(false)
+
+  if (isEditing) {
+    return (
+      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+        <h4 className="text-sm font-semibold text-gray-900 mb-4">Edit Learning Rule</h4>
+        <InlineRuleForm
+          smes={smes}
+          initialRule={rule}
+          onSave={(updatedRule) => {
+            onEdit({ ...updatedRule, id: rule.id, isActive: rule.isActive })
+            setIsEditing(false)
+          }}
+          onCancel={() => setIsEditing(false)}
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div className="group rounded-lg border border-gray-200 bg-white p-3 hover:border-gray-300 transition-all">
+      <div className="flex items-center justify-between">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 mb-1">
+            <h4 className="text-sm font-semibold text-gray-900">{rule.name}</h4>
+            <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+              rule.callType === 'external' ? 'bg-green-100 text-green-800' :
+              rule.callType === 'internal' ? 'bg-blue-100 text-blue-800' :
+              'bg-gray-100 text-gray-800'
+            }`}>
+              {rule.callType} calls
+            </span>
+          </div>
+          
+          <div className="text-xs text-gray-600 space-y-1">
+            <div>
+              <span className="font-medium">Keywords:</span> {rule.meetingTitleKeywords.join(', ') || 'None'}
+            </div>
+            {rule.dealStages && rule.dealStages.length > 0 && (
+              <div>
+                <span className="font-medium">Deal Stages:</span> {rule.dealStages.join(', ')}
+              </div>
+            )}
+            <div>
+              <span className="font-medium">Users:</span> {rule.selectedUsers?.length || 0} selected
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsEditing(true)}
+            className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-gray-600 rounded transition-all"
+            title="Edit rule"
+          >
+            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </button>
+          
+          <button
+            onClick={onToggle}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              rule.isActive ? 'bg-gray-900' : 'bg-gray-300'
+            }`}
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+              rule.isActive ? 'translate-x-6' : 'translate-x-1'
+            }`} />
+          </button>
+          
+          <button
+            onClick={onDelete}
+            className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-600 rounded transition-all"
+            title="Delete rule"
+          >
+            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function InlineRuleForm({ 
+  smes,
+  onCancel,
+  onSave,
+  initialRule
+}: { 
+  smes: SME[]
+  onCancel: () => void
+  onSave: (rule: Omit<IngestionRule, 'id' | 'isActive'>) => void
+  initialRule?: IngestionRule
+}) {
+  const [ruleName, setRuleName] = useState(initialRule?.name || '')
+  const [callType, setCallType] = useState<'external' | 'internal' | 'all'>(initialRule?.callType || 'external')
+  const [selectedUsers, setSelectedUsers] = useState<string[]>(initialRule?.selectedUsers || [])
+  const [meetingTitleKeywords, setMeetingTitleKeywords] = useState<string[]>(initialRule?.meetingTitleKeywords || [])
+  const [dealStages, setDealStages] = useState<string[]>(initialRule?.dealStages || [])
   const [keywordInput, setKeywordInput] = useState('')
 
   const addKeyword = () => {
@@ -647,13 +657,6 @@ function NewRuleModal({
     }
   }
 
-  const toggleUser = (userId: string) => {
-    setSelectedUsers(prev => 
-      prev.includes(userId) 
-        ? prev.filter(id => id !== userId)
-        : [...prev, userId]
-    )
-  }
 
   const handleSave = () => {
     if (ruleName.trim()) {
@@ -668,10 +671,8 @@ function NewRuleModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-black/25" onClick={onClose} />
-      <div className="relative w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Create Learning Rule</h3>
+    <div>
+      <div>
         
         <div className="space-y-4">
           <div>
@@ -698,55 +699,54 @@ function NewRuleModal({
             </select>
           </div>
 
-          {/* User Selection */}
+          {/* User Selection - Multi-select Dropdown */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Select users (optional)</label>
-            <div className="max-h-32 overflow-y-auto rounded-lg border border-gray-300 bg-gray-50 p-2">
+            <select
+              multiple
+              value={selectedUsers}
+              onChange={(e) => {
+                const selectedOptions = Array.from(e.target.selectedOptions, option => option.value)
+                setSelectedUsers(selectedOptions)
+              }}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900 min-h-[120px]"
+            >
               {smes.map((sme) => (
-                <label key={sme.id} className="flex items-center gap-2 p-2 hover:bg-white rounded cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={selectedUsers.includes(sme.id)}
-                    onChange={() => toggleUser(sme.id)}
-                    className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
-                  />
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-6 w-6 items-center justify-center rounded bg-gray-100">
-                      <span className="text-xs font-semibold text-gray-700">{sme.name.split(' ').map(n => n[0]).join('')}</span>
-                    </div>
-                    <span className="text-sm text-gray-900">{sme.name}</span>
-                    <span className="text-xs text-gray-500">({sme.department})</span>
-                  </div>
-                </label>
+                <option key={sme.id} value={sme.id} className="py-2">
+                  {sme.name} - {sme.role} ({sme.department})
+                </option>
               ))}
-            </div>
+            </select>
+            {selectedUsers.length > 0 && (
+              <div className="mt-2 text-xs text-gray-600">
+                {selectedUsers.length} user{selectedUsers.length !== 1 ? 's' : ''} selected
+              </div>
+            )}
           </div>
 
-          {/* Deal Stages */}
+          {/* Deal Stages - Multi-select Dropdown */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Deal stages</label>
-            <div className="grid grid-cols-2 gap-2">
+            <select
+              multiple
+              value={dealStages}
+              onChange={(e) => {
+                const selectedOptions = Array.from(e.target.selectedOptions, option => option.value)
+                setDealStages(selectedOptions)
+              }}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900 min-h-[100px]"
+            >
               {['Prospecting', 'Discovery', 'Qualification', 'Proposal', 'Negotiation', 'Closed Won', 'Closed Lost'].map(stage => (
-                <label key={stage} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={dealStages.includes(stage)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setDealStages(prev => [...prev, stage])
-                      } else {
-                        setDealStages(prev => prev.filter(s => s !== stage))
-                      }
-                    }}
-                    className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
-                  />
-                  <span className="text-sm text-gray-900">{stage}</span>
-                </label>
+                <option key={stage} value={stage} className="py-1">
+                  {stage}
+                </option>
               ))}
-            </div>
-            <p className="text-xs text-gray-600 mt-2">
-              Select specific deal stages to focus learning on calls from these stages only
-            </p>
+            </select>
+            {dealStages.length > 0 && (
+              <div className="mt-2 text-xs text-gray-600">
+                {dealStages.length} stage{dealStages.length !== 1 ? 's' : ''} selected
+              </div>
+            )}
           </div>
 
           {/* Meeting Title Keywords */}
@@ -798,7 +798,7 @@ function NewRuleModal({
 
         <div className="flex justify-end gap-3 mt-6">
           <button 
-            onClick={onClose}
+            onClick={onCancel}
             className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
             Cancel

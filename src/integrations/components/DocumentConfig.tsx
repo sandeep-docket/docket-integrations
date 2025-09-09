@@ -2,11 +2,13 @@ import { useState, Fragment } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { useIntegrationsStore } from '../store'
 import type { IntegrationProvider } from '../types'
+import { SimpleFolderTree } from './SimpleFolderTree'
+import type { FolderStructure } from './FolderBrowser'
 
 type DocumentItem = {
   id: string
   name: string
-  type: 'file' | 'page' | 'database' | 'site' | 'list' | 'library'
+  type: 'file' | 'page' | 'database' | 'site' | 'list' | 'library' | 'folder'
   path: string
   size?: string
   lastModified: string
@@ -15,7 +17,10 @@ type DocumentItem = {
   url?: string
   accountId: string
   accountName: string
+  parentId?: string
+  hasChildren?: boolean
 }
+
 
 type ConnectedAccount = {
   id: string
@@ -92,6 +97,95 @@ const getProviderConfig = (providerId: string) => {
   return configs[providerId as keyof typeof configs] || configs['google-drive']
 }
 
+// Mock folder structure for Google Drive
+const getFolderStructure = (): FolderStructure[] => [
+  {
+    id: 'root-sales',
+    name: 'Sales',
+    path: '/Sales',
+    icon: '💼',
+    children: [
+      {
+        id: 'sales-playbooks',
+        name: 'Playbooks',
+        path: '/Sales/Playbooks',
+        icon: '📁',
+        children: [
+          { id: 'pb1', name: 'Discovery Playbook.pdf', type: 'file', path: '/Sales/Playbooks', size: '2.4 MB', lastModified: '2 days ago', isSelected: false, icon: '📄', accountId: 'acc1', accountName: 'john.doe@company.com' },
+          { id: 'pb2', name: 'Demo Script.docx', type: 'file', path: '/Sales/Playbooks', size: '156 KB', lastModified: '1 week ago', isSelected: false, icon: '📄', accountId: 'acc1', accountName: 'john.doe@company.com' },
+          { id: 'pb3', name: 'Objection Handling.pdf', type: 'file', path: '/Sales/Playbooks', size: '890 KB', lastModified: '3 days ago', isSelected: false, icon: '📄', accountId: 'acc1', accountName: 'john.doe@company.com' },
+        ]
+      },
+      {
+        id: 'sales-research',
+        name: 'Research',
+        path: '/Sales/Research',
+        icon: '📁',
+        children: [
+          { id: 'sr1', name: 'Competitive Analysis Q1.xlsx', type: 'file', path: '/Sales/Research', size: '1.8 MB', lastModified: '3 days ago', isSelected: false, icon: '📊', accountId: 'acc1', accountName: 'john.doe@company.com' },
+          { id: 'sr2', name: 'Market Research.pdf', type: 'file', path: '/Sales/Research', size: '3.2 MB', lastModified: '1 week ago', isSelected: false, icon: '📄', accountId: 'acc1', accountName: 'john.doe@company.com' },
+        ]
+      },
+      {
+        id: 'sales-planning',
+        name: 'Planning',
+        path: '/Sales/Planning',
+        icon: '📁',
+        children: [
+          { id: 'sp1', name: 'Sales Targets Q2.xlsx', type: 'file', path: '/Sales/Planning', size: '445 KB', lastModified: '1 week ago', isSelected: false, icon: '📊', accountId: 'acc1', accountName: 'john.doe@company.com' },
+          { id: 'sp2', name: 'Territory Planning.docx', type: 'file', path: '/Sales/Planning', size: '234 KB', lastModified: '2 weeks ago', isSelected: false, icon: '📄', accountId: 'acc1', accountName: 'john.doe@company.com' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'root-marketing',
+    name: 'Marketing',
+    path: '/Marketing',
+    icon: '📢',
+    children: [
+      {
+        id: 'marketing-content',
+        name: 'Content',
+        path: '/Marketing/Content',
+        icon: '📁',
+        children: [
+          { id: 'mc1', name: 'Product Demo Script.docx', type: 'file', path: '/Marketing/Content', size: '156 KB', lastModified: '1 week ago', isSelected: false, icon: '📄', accountId: 'acc1', accountName: 'john.doe@company.com' },
+          { id: 'mc2', name: 'Blog Posts Q1.pdf', type: 'file', path: '/Marketing/Content', size: '890 KB', lastModified: '5 days ago', isSelected: false, icon: '📄', accountId: 'acc1', accountName: 'john.doe@company.com' },
+        ]
+      },
+      {
+        id: 'marketing-campaigns',
+        name: 'Campaigns',
+        path: '/Marketing/Campaigns',
+        icon: '📁',
+        children: [
+          { id: 'camp1', name: 'Q1 Campaign Results.xlsx', type: 'file', path: '/Marketing/Campaigns', size: '2.1 MB', lastModified: '4 days ago', isSelected: false, icon: '📊', accountId: 'acc1', accountName: 'john.doe@company.com' },
+          { id: 'camp2', name: 'Campaign Assets.zip', type: 'file', path: '/Marketing/Campaigns', size: '15 MB', lastModified: '1 week ago', isSelected: false, icon: '📦', accountId: 'acc1', accountName: 'john.doe@company.com' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'root-product',
+    name: 'Product',
+    path: '/Product',
+    icon: '🚀',
+    children: [
+      {
+        id: 'product-docs',
+        name: 'Documentation',
+        path: '/Product/Documentation',
+        icon: '📁',
+        children: [
+          { id: 'pd1', name: 'API Documentation.pdf', type: 'file', path: '/Product/Documentation', size: '5.2 MB', lastModified: '2 days ago', isSelected: false, icon: '📄', accountId: 'acc1', accountName: 'john.doe@company.com' },
+          { id: 'pd2', name: 'Feature Specifications.docx', type: 'file', path: '/Product/Documentation', size: '1.2 MB', lastModified: '1 week ago', isSelected: false, icon: '📄', accountId: 'acc1', accountName: 'john.doe@company.com' },
+        ]
+      }
+    ]
+  }
+]
+
 export function DocumentConfigPanel({ provider, onClose }: { provider: IntegrationProvider; onClose: () => void }) {
   const configure = useIntegrationsStore((s) => s.configure)
   const { connections } = useIntegrationsStore()
@@ -129,6 +223,82 @@ export function DocumentConfigPanel({ provider, onClose }: { provider: Integrati
         ? prev.selectedItems.filter(id => id !== itemId)
         : [...prev.selectedItems, itemId]
     }))
+  }
+
+  // Simple folder structure
+  const [folderStructure] = useState<FolderStructure[]>(provider.id === 'google-drive' ? getFolderStructure() : [])
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set())
+  const [selectedFolders, setSelectedFolders] = useState<Set<string>>(new Set())
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
+
+  const toggleFileSelection = (fileId: string) => {
+    setSelectedFiles(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(fileId)) {
+        newSet.delete(fileId)
+      } else {
+        newSet.add(fileId)
+      }
+      return newSet
+    })
+  }
+
+  const toggleFolderSelection = (folderId: string) => {
+    setSelectedFolders(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(folderId)) {
+        newSet.delete(folderId)
+      } else {
+        newSet.add(folderId)
+      }
+      return newSet
+    })
+  }
+
+  const toggleFolderExpansion = (folderId: string) => {
+    setExpandedFolders(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(folderId)) {
+        newSet.delete(folderId)
+      } else {
+        newSet.add(folderId)
+      }
+      return newSet
+    })
+  }
+
+  const selectAll = () => {
+    // Select all files and folders
+    const allFiles = new Set<string>()
+    const allFolders = new Set<string>()
+    
+    const collectItems = (folders: FolderStructure[]) => {
+      folders.forEach(folder => {
+        allFolders.add(folder.id)
+        folder.children.forEach(child => {
+          if ('children' in child) {
+            collectItems([child])
+          } else {
+            allFiles.add(child.id)
+          }
+        })
+      })
+    }
+    
+    collectItems(folderStructure)
+    setSelectedFiles(allFiles)
+    setSelectedFolders(allFolders)
+  }
+
+  const deleteSelected = () => {
+    // Remove selected files and folders from the structure
+    // This would typically make API calls to delete items
+    console.log('Deleting selected files:', Array.from(selectedFiles))
+    console.log('Deleting selected folders:', Array.from(selectedFolders))
+    
+    // Clear selections after deletion
+    setSelectedFiles(new Set())
+    setSelectedFolders(new Set())
   }
 
   const save = () => {
@@ -340,6 +510,26 @@ export function DocumentConfigPanel({ provider, onClose }: { provider: Integrati
                     <div className="text-gray-500 mb-2">We couldn't find anything for "{searchQuery}"</div>
                   </div>
                 )}
+              </div>
+            ) : advancedMode && provider.id === 'google-drive' ? (
+              // Simple Tree Structure for Google Drive
+              <div className="p-6">
+                <div className="mb-4">
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Folder Structure</h3>
+                  <div className="text-sm text-gray-600">{selectedFiles.size} files selected</div>
+                </div>
+                
+                <SimpleFolderTree
+                  folders={folderStructure}
+                  selectedFiles={selectedFiles}
+                  selectedFolders={selectedFolders}
+                  onFileToggle={toggleFileSelection}
+                  onFolderToggle={toggleFolderExpansion}
+                  onFolderSelect={toggleFolderSelection}
+                  onSelectAll={selectAll}
+                  onDeleteSelected={deleteSelected}
+                  expandedFolders={expandedFolders}
+                />
               </div>
             ) : (
               // Account grouped view

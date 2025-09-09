@@ -211,35 +211,58 @@ export function FieldMappingConfigPanel({ provider, onClose }: { provider: Integ
                 <p className="text-sm text-gray-600 mt-1">{activeConfig.description}</p>
               </div>
               <div className="flex rounded-lg bg-gray-100 p-1">
+                {/* Push only - Arrow pointing right */}
                 <button
                   onClick={() => updateObjectPermissions({ canRead: false, canWrite: true })}
-                  className={`rounded-md px-3 py-2 text-xs font-medium transition-all ${
+                  className={`group relative rounded-md p-2 transition-all ${
                     !activeConfig.permissions.canRead && activeConfig.permissions.canWrite
                       ? 'bg-white text-gray-900 shadow-sm'
                       : 'text-gray-600 hover:text-gray-800'
                   }`}
+                  title="Push only - Data flows from Docket to CRM"
                 >
-                  Push only
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                    Push only
+                  </div>
                 </button>
+                
+                {/* Pull only - Arrow pointing left */}
                 <button
                   onClick={() => updateObjectPermissions({ canRead: true, canWrite: false })}
-                  className={`rounded-md px-3 py-2 text-xs font-medium transition-all ${
+                  className={`group relative rounded-md p-2 transition-all ${
                     activeConfig.permissions.canRead && !activeConfig.permissions.canWrite
                       ? 'bg-white text-gray-900 shadow-sm'
                       : 'text-gray-600 hover:text-gray-800'
                   }`}
+                  title="Pull only - Data flows from CRM to Docket"
                 >
-                  Pull only
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                  </svg>
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                    Pull only
+                  </div>
                 </button>
+                
+                {/* Bidirectional - Double arrow */}
                 <button
                   onClick={() => updateObjectPermissions({ canRead: true, canWrite: true })}
-                  className={`rounded-md px-3 py-2 text-xs font-medium transition-all ${
+                  className={`group relative rounded-md p-2 transition-all ${
                     activeConfig.permissions.canRead && activeConfig.permissions.canWrite
                       ? 'bg-white text-gray-900 shadow-sm'
                       : 'text-gray-600 hover:text-gray-800'
                   }`}
+                  title="Bidirectional - Data flows both ways"
                 >
-                  Bidirectional
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                    Bidirectional
+                  </div>
                 </button>
               </div>
             </div>

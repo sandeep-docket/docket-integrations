@@ -20,6 +20,7 @@ export function ConfluenceConfigPanel({ onClose }: { onClose: () => void }) {
   const [isConnected, setIsConnected] = useState(isAlreadyConnected)
   const [isConnecting, setIsConnecting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState<'name' | 'pages' | 'updated'>('name')
   
   const [spaces, setSpaces] = useState<ConfluenceSpace[]>([
     { id: 'space1', name: 'Sales Knowledge Base', key: 'SKB', description: 'Comprehensive sales processes, methodologies, and best practices', pageCount: 45, lastModified: '2 days ago', isSelected: true, url: 'https://company.atlassian.net/wiki/spaces/SKB', type: 'team' },
@@ -52,11 +53,23 @@ export function ConfluenceConfigPanel({ onClose }: { onClose: () => void }) {
     onClose()
   }
 
-  const filteredSpaces = spaces.filter(space => 
-    space.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    space.key.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    space.description.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredAndSortedSpaces = spaces
+    .filter(space => 
+      space.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      space.key.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      space.description.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'pages':
+          return b.pageCount - a.pageCount
+        case 'updated':
+          return new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
+        case 'name':
+        default:
+          return a.name.localeCompare(b.name)
+      }
+    })
 
   if (!isConnected) {
     return (
@@ -163,22 +176,37 @@ export function ConfluenceConfigPanel({ onClose }: { onClose: () => void }) {
                 className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2.5 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
               />
             </div>
+            
+            {/* Sort Dropdown */}
+            <div className="ml-4">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'name' | 'pages' | 'updated')}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+              >
+                <option value="name">Sort by Name</option>
+                <option value="pages">Sort by Pages</option>
+                <option value="updated">Sort by Updated</option>
+              </select>
+            </div>
           </div>
           
           <div className="flex items-center justify-between text-sm">
             <div className="text-gray-600">
-              {selectedSpaces.length} space{selectedSpaces.length !== 1 ? 's' : ''} selected • {selectedSpaces.reduce((sum, s) => sum + s.pageCount, 0)} total pages
+              {selectedSpaces.length} of {spaces.length} spaces selected
             </div>
-            <div className="text-xs text-gray-500">
-              Each space connection syncs full page content
-            </div>
+            {selectedSpaces.length > 0 && (
+              <div className="text-xs text-green-700 bg-green-50 px-2 py-1 rounded-full">
+                ✓ Ready for ingestion ({selectedSpaces.reduce((sum, s) => sum + s.pageCount, 0)} pages)
+              </div>
+            )}
           </div>
         </div>
 
         {/* Spaces List */}
         <div className="p-6">
-          <div className="space-y-3">
-            {filteredSpaces.map((space) => (
+          <div className="space-y-2">
+            {filteredAndSortedSpaces.map((space) => (
               <SpaceCard
                 key={space.id}
                 space={space}
@@ -187,7 +215,7 @@ export function ConfluenceConfigPanel({ onClose }: { onClose: () => void }) {
             ))}
           </div>
           
-          {filteredSpaces.length === 0 && searchQuery && (
+          {filteredAndSortedSpaces.length === 0 && searchQuery && (
             <div className="text-center py-12">
               <div className="text-gray-500">No spaces match "{searchQuery}"</div>
             </div>
@@ -251,35 +279,30 @@ function SpaceCard({
 
   return (
     <div 
-      className={`group rounded-xl border p-5 transition-all cursor-pointer ${
+      className={`group rounded-lg border p-3 transition-all cursor-pointer ${
         space.isSelected 
-          ? 'border-gray-900 bg-gray-50 shadow-md' 
-          : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+          ? 'border-gray-900 bg-gray-50' 
+          : 'border-gray-200 bg-white hover:border-gray-300'
       }`}
       onClick={onToggle}
     >
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-4 flex-1">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-xl">
-            📚
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-100 flex-shrink-0">
+            <span className="text-sm">📚</span>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-2">
-              <h4 className="text-base font-semibold text-gray-900">{space.name}</h4>
-              <span className="text-xs font-mono bg-gray-100 text-gray-700 px-2 py-1 rounded">{space.key}</span>
-              <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${getSpaceTypeColor(space.type)}`}>
-                {getSpaceTypeIcon(space.type)} {space.type}
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-medium text-gray-900 truncate">{space.name}</h4>
+              <span className="text-xs font-mono bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">{space.key}</span>
+              <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium ${getSpaceTypeColor(space.type)}`}>
+                {getSpaceTypeIcon(space.type)}
               </span>
             </div>
-            <p className="text-sm text-gray-600 mb-3 leading-relaxed">{space.description}</p>
-            <div className="flex items-center gap-4 text-xs text-gray-500">
-              <span className="flex items-center gap-1">
-                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.29-1.009-5.674-2.64" />
-                </svg>
-                {space.pageCount} pages
-              </span>
-              <span>Updated {space.lastModified}</span>
+            <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
+              <span>{space.pageCount} pages</span>
+              <span>•</span>
+              <span>{space.lastModified}</span>
               <button 
                 onClick={(e) => {
                   e.stopPropagation()
@@ -287,34 +310,21 @@ function SpaceCard({
                 }}
                 className="opacity-0 group-hover:opacity-100 text-blue-600 hover:text-blue-800 transition-all"
               >
-                View in Confluence
+                View →
               </button>
             </div>
           </div>
         </div>
-        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all flex-shrink-0 ${
           space.isSelected ? 'border-gray-900 bg-gray-900' : 'border-gray-300 group-hover:border-gray-400'
         }`}>
           {space.isSelected && (
-            <svg className="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="h-2.5 w-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
           )}
         </div>
       </div>
-      
-      {space.isSelected && (
-        <div className="mt-4 rounded-lg bg-blue-50 border border-blue-200 p-3">
-          <div className="flex items-center gap-2 text-sm">
-            <svg className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="text-blue-800 font-medium">
-              Full page content from this space will be ingested into Sales Knowledge Lake
-            </span>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { useIntegrationsStore } from './store'
 import { CommandPalette } from './components/cmdk/CommandPalette'
 import { ConfigureDrawer } from './components/ConfigureDrawer'
 import { ConnectionModal } from './components/ConnectionModal'
+import { IntegrationAvatar } from './components/IntegrationAvatar'
 import type { IntegrationCategory } from './types'
 import { 
   HomeIcon, 
@@ -299,15 +300,6 @@ function RecommendedIntegrationCard({
   connected: boolean
   onConnect: () => void
 }) {
-  const getProviderIcon = (name: string) => {
-    const iconMap: Record<string, string> = {
-      'Slack': '💬',
-      'Gong': '📞', 
-      'HubSpot': '🟠'
-    }
-    return iconMap[name] || '🔗'
-  }
-
   const getProviderBenefit = (name: string) => {
     const benefitMap: Record<string, string> = {
       'Slack': 'Team knowledge & Q&As',
@@ -320,9 +312,11 @@ function RecommendedIntegrationCard({
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4 hover:border-gray-300 transition-all">
       <div className="flex items-center gap-3 mb-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 text-xl">
-          {getProviderIcon(provider.name)}
-        </div>
+        <IntegrationAvatar 
+          providerId={provider.id}
+          providerName={provider.name}
+          size="md"
+        />
         <div className="flex-1">
           <h4 className="text-sm font-semibold text-gray-900 mb-1">{provider.name}</h4>
           <p className="text-xs text-gray-600">{getProviderBenefit(provider.name)}</p>
@@ -376,27 +370,6 @@ function IntegrationChannelCard({
     setShowConnectionModal(false)
   }
 
-  // Icon mapping for different providers
-  const getProviderIcon = (name: string) => {
-    const iconMap: Record<string, string> = {
-      'Google Drive': '📧',
-      'Salesforce': '⚡', 
-      'Slack': '💬',
-      'Microsoft Teams': '🔷',
-      'Notion': '📝',
-      'HubSpot': '🟠',
-      'Zendesk': '📞',
-      'Intercom': '💬',
-      'Gong': '🎯',
-      'SharePoint': '📁',
-      'Confluence': '📚',
-      'Highspot': '🎯',
-      'Seismic': '📊',
-      'Avoma': '🎥',
-      'Zapier': '⚡'
-    }
-    return iconMap[name] || '🔗'
-  }
 
   const getProviderDescription = (name: string, category: string) => {
     const descMap: Record<string, string> = {
@@ -424,9 +397,11 @@ function IntegrationChannelCard({
       {/* Header with toggle */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-start gap-3 flex-1">
-          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gray-100 text-2xl">
-            {getProviderIcon(provider.name)}
-          </div>
+          <IntegrationAvatar 
+            providerId={provider.id}
+            providerName={provider.name}
+            size="lg"
+          />
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-semibold text-gray-900 mb-1 truncate">{provider.name}</h3>
             <p className="text-sm text-gray-600 line-clamp-2">{getProviderDescription(provider.name, provider.category)}</p>

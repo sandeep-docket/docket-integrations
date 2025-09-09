@@ -10,9 +10,14 @@ type SalesloftUser = {
   isSelected: boolean
 }
 
-type CallFilter = {
+type LearningRule = {
+  id: string
+  name: string
+  callType: 'external' | 'internal' | 'all'
+  selectedUsers: string[]
+  meetingTitleKeywords: string[]
   dealStages: string[]
-  callTitles: string[]
+  isActive: boolean
 }
 
 export function SalesloftConfigPanel({ onClose }: { onClose: () => void }) {
@@ -22,7 +27,12 @@ export function SalesloftConfigPanel({ onClose }: { onClose: () => void }) {
   const [isConnected, setIsConnected] = useState(isAlreadyConnected)
   const [isConnecting, setIsConnecting] = useState(false)
   const [apiKey, setApiKey] = useState('')
-  const [titleInput, setTitleInput] = useState('')
+  const [showCreateRule, setShowCreateRule] = useState(false)
+  const [newRuleName, setNewRuleName] = useState('')
+  const [newRuleCallType, setNewRuleCallType] = useState<'external' | 'internal' | 'all'>('external')
+  const [newRuleKeywords, setNewRuleKeywords] = useState<string[]>([])
+  const [newRuleDealStages, setNewRuleDealStages] = useState<string[]>([])
+  const [keywordInput, setKeywordInput] = useState('')
   
   const [users, setUsers] = useState<SalesloftUser[]>([
     { id: 'u1', name: 'Sarah Chen', email: 'sarah.chen@company.com', role: 'Senior Sales Director', callCount: 287, isSelected: true },
@@ -31,10 +41,19 @@ export function SalesloftConfigPanel({ onClose }: { onClose: () => void }) {
     { id: 'u4', name: 'David Park', email: 'david.park@company.com', role: 'Account Executive', callCount: 234, isSelected: false },
   ])
 
-  const [filters, setFilters] = useState<CallFilter>({
-    dealStages: ['Discovery', 'Proposal'],
-    callTitles: ['demo', 'discovery', 'kickoff']
-  })
+  const [learningRules, setLearningRules] = useState<LearningRule[]>([
+    {
+      id: '1',
+      name: 'Sales engagement calls',
+      callType: 'external',
+      selectedUsers: ['u1', 'u2', 'u3'],
+      meetingTitleKeywords: ['demo', 'discovery', 'kickoff'],
+      dealStages: ['Discovery', 'Proposal'],
+      isActive: true
+    }
+  ])
+
+  const dealStages = ['Discovery', 'Qualification', 'Proposal', 'Negotiation', 'Closed Won', 'Closed Lost']
 
   const handleConnect = async () => {
     setIsConnecting(true)
@@ -49,23 +68,58 @@ export function SalesloftConfigPanel({ onClose }: { onClose: () => void }) {
     ))
   }
 
-  const addCallTitle = () => {
-    const title = titleInput.trim()
-    if (title && !filters.callTitles.includes(title)) {
-      setFilters(prev => ({ ...prev, callTitles: [...prev.callTitles, title] }))
-      setTitleInput('')
+  const addKeyword = () => {
+    const keyword = keywordInput.trim().toLowerCase()
+    if (keyword && !newRuleKeywords.includes(keyword)) {
+      setNewRuleKeywords(prev => [...prev, keyword])
+      setKeywordInput('')
     }
   }
 
-  const removeCallTitle = (title: string) => {
-    setFilters(prev => ({ ...prev, callTitles: prev.callTitles.filter(t => t !== title) }))
+  const removeKeyword = (keyword: string) => {
+    setNewRuleKeywords(prev => prev.filter(k => k !== keyword))
+  }
+
+  const toggleDealStage = (stage: string) => {
+    setNewRuleDealStages(prev => 
+      prev.includes(stage) ? prev.filter(s => s !== stage) : [...prev, stage]
+    )
+  }
+
+  const createRule = () => {
+    if (newRuleName.trim()) {
+      const newRule: LearningRule = {
+        id: Date.now().toString(),
+        name: newRuleName.trim(),
+        callType: newRuleCallType,
+        selectedUsers: users.filter(u => u.isSelected).map(u => u.id),
+        meetingTitleKeywords: [...newRuleKeywords],
+        dealStages: [...newRuleDealStages],
+        isActive: true
+      }
+      setLearningRules(prev => [...prev, newRule])
+      
+      // Reset form
+      setNewRuleName('')
+      setNewRuleCallType('external')
+      setNewRuleKeywords([])
+      setNewRuleDealStages([])
+      setShowCreateRule(false)
+    }
+  }
+
+  const toggleRule = (ruleId: string) => {
+    setLearningRules(prev => prev.map(rule => 
+      rule.id === ruleId ? { ...rule, isActive: !rule.isActive } : rule
+    ))
   }
 
   const save = () => {
     const { configure } = useIntegrationsStore.getState()
     configure('salesloft', { 
       selectedUsers: users.filter(u => u.isSelected),
-      filters,
+      learningRules: learningRules.filter(r => r.isActive),
+      apiKey,
       lastUpdated: new Date().toISOString()
     })
     onClose()
@@ -99,30 +153,35 @@ export function SalesloftConfigPanel({ onClose }: { onClose: () => void }) {
               </div>
               <h2 className="text-xl font-bold text-gray-900 mb-2">Connect Salesloft</h2>
               <p className="text-gray-600 mb-6">
-                Enter your Salesloft API key to access conversation data and call insights.
+                Enter your API key to access sales engagement and conversation intelligence data.
               </p>
             </div>
-
+            
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Salesloft API Key</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">API Key</label>
                 <input
                   type="password"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="Enter your API key"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                  placeholder="Enter your Salesloft API key"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
                 />
-                <p className="text-xs text-gray-600 mt-1">
-                  You can find your API key in Salesloft Settings → Team → API
-                </p>
               </div>
+              
               <button
                 onClick={handleConnect}
-                disabled={!apiKey || isConnecting}
-                className="w-full rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                disabled={isConnecting || !apiKey.trim()}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50 transition-colors"
               >
-                {isConnecting ? 'Connecting...' : 'Connect to Salesloft'}
+                {isConnecting ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <span>Connecting...</span>
+                  </>
+                ) : (
+                  'Connect to Salesloft'
+                )}
               </button>
             </div>
           </div>
@@ -131,6 +190,7 @@ export function SalesloftConfigPanel({ onClose }: { onClose: () => void }) {
     )
   }
 
+  const selectedUsers = users.filter(u => u.isSelected)
 
   return (
     <div className="flex h-full flex-col bg-white rounded-xl overflow-hidden">
@@ -141,7 +201,7 @@ export function SalesloftConfigPanel({ onClose }: { onClose: () => void }) {
           </div>
           <div className="flex-1">
             <h1 className="text-xl font-bold text-gray-900">Salesloft Configuration</h1>
-            <p className="text-gray-600 mt-0.5 text-sm">Select call users and configure filters</p>
+            <p className="text-gray-600 mt-0.5 text-sm">Configure sales engagement insights</p>
           </div>
           <button onClick={onClose} className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -153,9 +213,13 @@ export function SalesloftConfigPanel({ onClose }: { onClose: () => void }) {
 
       <div className="flex-1 overflow-y-auto p-6">
         <div className="space-y-6">
-          {/* User Selection */}
+          {/* Subject Matter Experts */}
           <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Select Call Users (Experts)</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Subject Matter Experts</h3>
+              <div className="text-sm text-gray-600">{selectedUsers.length} experts selected</div>
+            </div>
+
             <div className="space-y-3">
               {users.map((user) => (
                 <div 
@@ -188,76 +252,180 @@ export function SalesloftConfigPanel({ onClose }: { onClose: () => void }) {
             </div>
           </div>
 
-          {/* Call Filters */}
+          {/* Learning Rules */}
           <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Call Filters</h3>
-            <div className="space-y-4">
-              {/* Deal Stages */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Deal Stages</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {['Prospecting', 'Discovery', 'Qualification', 'Proposal', 'Negotiation', 'Closed Won'].map(stage => (
-                    <label key={stage} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={filters.dealStages.includes(stage)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFilters(prev => ({ ...prev, dealStages: [...prev.dealStages, stage] }))
-                          } else {
-                            setFilters(prev => ({ ...prev, dealStages: prev.dealStages.filter(s => s !== stage) }))
-                          }
-                        }}
-                        className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
-                      />
-                      <span className="text-sm text-gray-900">{stage}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Ingestion Rules</h3>
+              <button
+                onClick={() => setShowCreateRule(true)}
+                className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Add Rule
+              </button>
+            </div>
 
-              {/* Call Titles */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Call Title Keywords</label>
-                {filters.callTitles.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
-                    {filters.callTitles.map((title) => (
-                      <div key={title} className="inline-flex items-center gap-1 rounded-md bg-white border border-gray-200 px-2 py-1 text-sm">
-                        <span className="text-gray-900">{title}</span>
+            <div className="space-y-3">
+              {learningRules.map((rule) => (
+                <div key={rule.id} className="rounded-lg border border-gray-200 bg-white p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h4 className="text-sm font-semibold text-gray-900">{rule.name}</h4>
+                        <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                          rule.callType === 'external' ? 'bg-green-100 text-green-800' :
+                          rule.callType === 'internal' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {rule.callType} calls
+                        </span>
+                      </div>
+                      
+                      <div className="space-y-2 text-xs text-gray-600">
+                        <div>
+                          <span className="font-medium">Keywords:</span> {rule.meetingTitleKeywords.join(', ') || 'None'}
+                        </div>
+                        <div>
+                          <span className="font-medium">Deal Stages:</span> {rule.dealStages.join(', ') || 'All'}
+                        </div>
+                        <div>
+                          <span className="font-medium">Users:</span> {rule.selectedUsers.length} selected
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={() => toggleRule(rule.id)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        rule.isActive ? 'bg-gray-900' : 'bg-gray-300'
+                      }`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        rule.isActive ? 'translate-x-6' : 'translate-x-1'
+                      }`} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              
+              {/* Inline Create Rule Form */}
+              {showCreateRule && (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-4">Create New Ingestion Rule</h4>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Rule Name</label>
+                      <input
+                        type="text"
+                        value={newRuleName}
+                        onChange={(e) => setNewRuleName(e.target.value)}
+                        placeholder="e.g., Sales engagement calls"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Call Type</label>
+                      <div className="flex gap-2">
+                        {[
+                          { value: 'external', label: 'External' },
+                          { value: 'internal', label: 'Internal' },
+                          { value: 'all', label: 'All' }
+                        ].map((option) => (
+                          <button
+                            key={option.value}
+                            onClick={() => setNewRuleCallType(option.value as any)}
+                            className={`px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+                              newRuleCallType === option.value
+                                ? 'bg-gray-900 text-white'
+                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Meeting Title Keywords</label>
+                      <div className="flex gap-2 mb-2">
+                        <input
+                          type="text"
+                          value={keywordInput}
+                          onChange={(e) => setKeywordInput(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && addKeyword()}
+                          placeholder="Add keyword..."
+                          className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                        />
                         <button
-                          onClick={() => removeCallTitle(title)}
-                          className="text-gray-400 hover:text-gray-600"
+                          onClick={addKeyword}
+                          className="px-3 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
                         >
-                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
+                          Add
                         </button>
                       </div>
-                    ))}
+                      <div className="flex flex-wrap gap-2">
+                        {newRuleKeywords.map((keyword) => (
+                          <span
+                            key={keyword}
+                            className="inline-flex items-center gap-1 bg-white text-gray-800 px-2 py-1 rounded-md text-xs border border-gray-200"
+                          >
+                            {keyword}
+                            <button
+                              onClick={() => removeKeyword(keyword)}
+                              className="text-gray-500 hover:text-gray-700"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Deal Stages</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {dealStages.map((stage) => (
+                          <label key={stage} className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={newRuleDealStages.includes(stage)}
+                              onChange={() => toggleDealStage(stage)}
+                              className="rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+                            />
+                            <span className="text-sm text-gray-700">{stage}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        onClick={() => setShowCreateRule(false)}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={createRule}
+                        disabled={!newRuleName.trim()}
+                        className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                      >
+                        Create Rule
+                      </button>
+                    </div>
                   </div>
-                )}
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={titleInput}
-                    onChange={(e) => setTitleInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && addCallTitle()}
-                    placeholder="Type call title and press Enter"
-                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
-                  />
-                  <button
-                    onClick={addCallTitle}
-                    disabled={!titleInput.trim()}
-                    className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50 transition-colors"
-                  >
-                    Add
-                  </button>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
       </div>
+
 
       <div className="border-t border-gray-200 bg-gray-50 px-6 py-6">
         <div className="flex items-center justify-between">
